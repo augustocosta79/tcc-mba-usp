@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "apps.authentication",
     "apps.users",
+    "apps.healthz"
 ]
 
 MIDDLEWARE = [
@@ -91,7 +92,8 @@ DATABASES = {
     }
 }
 
-# DATABASES["default"] = dj_database_url.parse(str(os.getenv("POSTGRES_URL")))
+
+DATABASES["default"] = dj_database_url.parse(str(os.getenv("POSTGRES_URL")))
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -144,5 +146,7 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:8000",
     "http://localhost:5173",
+    "*",
 ]
