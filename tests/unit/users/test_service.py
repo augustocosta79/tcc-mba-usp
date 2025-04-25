@@ -3,6 +3,7 @@ from apps.users.service import UserService
 from apps.users.user_entity import User
 from apps.shared.value_objects.name import Name
 from apps.shared.value_objects.email import Email
+from uuid import UUID
 import pytest
 
 class TestUserService:
@@ -22,6 +23,7 @@ class TestUserService:
         )
 
         assert isinstance(user, User)
+        assert isinstance(user.id, UUID)
         assert user.name == name
         assert user.email == email
         assert user.username == username
