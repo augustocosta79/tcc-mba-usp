@@ -5,7 +5,7 @@ import re
 
 class Email:
     def __init__(self, value: str):
-        self.value = value.strip()
+        self.value = value.strip().lower()
         self.validate()
 
     def validate(self):
