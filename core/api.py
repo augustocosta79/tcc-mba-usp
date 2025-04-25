@@ -1,7 +1,7 @@
 from ninja import NinjaAPI, Redoc
 
 from apps.authentication.api import authentication_router
-from apps.users.api import user_router
+# from apps.users.api import user_router
 from apps.healthz.api import healthz_router
 
 api = NinjaAPI(
@@ -13,5 +13,5 @@ api = NinjaAPI(
 
 
 api.add_router("/auth", authentication_router, tags=["Authentication"])
-api.add_router("/users", user_router, tags=["Users"])
+# api.add_router("/users", user_router, tags=["Users"])
 api.add_router("/healthz", healthz_router, tags=["Healthz"])
