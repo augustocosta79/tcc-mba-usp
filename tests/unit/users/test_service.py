@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 from apps.users.service import UserService
 from apps.users.user_entity import User
 from apps.shared.value_objects.name import Name
+from apps.shared.value_objects.email import Email
 import pytest
 
 class TestUserService:
@@ -10,7 +11,7 @@ class TestUserService:
         mock_repository = MagicMock()
         service = UserService(repository=mock_repository)
 
-        email="amcneto@hotmail.com",
+        email=Email("amcneto@hotmail.com"),
         username="amcneto",
         name=Name("Augusto")
         
