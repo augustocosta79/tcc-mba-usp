@@ -1,15 +1,16 @@
 import uuid
 from http import HTTPStatus
 
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.http import JsonResponse
 from ninja.errors import HttpError
 
 from apps.authentication.schema import LoginSchemaInput
-from apps.users.models import CustomUser
+# from apps.users.models import CustomUser
 
 from utils.jwt import generate_jwt_token
 
+CustomUser = get_user_model()
 
 class AuthenticationService:
     def auth_login(self, request, input_schema: LoginSchemaInput) -> JsonResponse:
