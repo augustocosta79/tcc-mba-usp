@@ -12,8 +12,8 @@ class TestUserService:
         mock_repository = MagicMock()
         service = UserService(repository=mock_repository)
 
-        email=Email("amcneto@hotmail.com"),
-        username="amcneto",
+        email=Email("amcneto@hotmail.com")
+        username="amcneto"
         name=Name("Augusto")
         
         user = service.create_user(
