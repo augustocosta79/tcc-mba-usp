@@ -1,14 +1,14 @@
-import uuid
+from datetime import datetime
+from uuid import UUID
 
 from ninja import Schema
 
 
 class UserSchema(Schema):
-    id: uuid.UUID
+    id: UUID
     email: str
     name: str
-
-
-class ChangePasswordSchema(Schema):
-    new_password: str
-    confirm_password: str
+    username: str
+    created_at: datetime
+    updated_at: datetime
+    is_active: bool

@@ -5,9 +5,12 @@ from jose import ExpiredSignatureError, jwt
 from ninja.errors import HttpError
 from ninja.security import HttpBearer
 
-from apps.users.models import CustomUser
+from django.contrib.auth import get_user_model
+
+# from apps.users.models import CustomUser
 from core import settings
 
+CustomUser = get_user_model()
 
 class JWTAuth(HttpBearer):
     def authenticate(self, request, token: str) -> bool:
