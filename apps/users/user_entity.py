@@ -1,16 +1,17 @@
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
+from apps.shared.value_objects.name import Name
 
 class User:
-    name: str
+    name: Name
     email: str
     username: Optional[str]
     created_at: datetime
     updated_at: datetime
     is_active: bool
 
-    def __init__(self, name: str, email: str, username: Optional[str]):
+    def __init__(self, name: Name, email: str, username: Optional[str]):
         self.name = name
         self.email = email
         self.username = username
