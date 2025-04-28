@@ -1,7 +1,16 @@
 from abc import ABC, abstractmethod
+from uuid import UUID
 from apps.users.user_entity import User
 
 class UserRepositoryInterface(ABC):
     @abstractmethod
-    def save(user: User) -> User:
+    def save(self,user: User) -> User:
+        pass
+
+    @abstractmethod
+    def get_user_by_id(self, user_id: UUID) -> User:
+        pass
+
+    @abstractmethod
+    def list_users(self) -> list[User]:
         pass
