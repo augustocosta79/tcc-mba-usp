@@ -1,9 +1,9 @@
 class Name:
     def __init__(self, value: str):
         self.value = value.strip()
-        self.validate()
+        self._validate()
 
-    def validate(self):
+    def _validate(self):
         if not self.value:
             raise ValueError("O nome é obrigatório.")
         

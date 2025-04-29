@@ -6,9 +6,9 @@ import re
 class Email:
     def __init__(self, value: str):
         self.value = value.strip().lower()
-        self.validate()
+        self._validate()
 
-    def validate(self):
+    def _validate(self):
         EMAIL_REGEX = r"^[\w\.-]+@[\w\.-]+\.\w+$"
         
         if not re.match(EMAIL_REGEX, self.value):
