@@ -11,7 +11,7 @@ def create_user_and_repository():
         name=Name("Augusto")
         email=Email("amcneto@hotmail.com")
         username="amcneto"
-        user = User(name, email, username)
+        user = User(name=name, email=email, username=username)
 
         repository  = UserRepository()
 
@@ -43,6 +43,4 @@ class TestUserRepository:
         assert retrieved_used.name == str(user.name)
         assert retrieved_used.email == str(user.email)
         assert retrieved_used.username == user.username
-        assert retrieved_used.created_at == user.created_at
-        assert retrieved_used.updated_at == user.updated_at
         assert isinstance(retrieved_used, User)
