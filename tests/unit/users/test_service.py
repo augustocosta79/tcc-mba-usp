@@ -38,7 +38,7 @@ class TestUserService:
         email = Email("test@email.com")
         username = "username123"
 
-        user = User(name, email, username)
+        user = User(name=name, email=email, username=username)
 
         mock_repository.get_user_by_id.return_value = user
 
@@ -60,13 +60,13 @@ class TestUserService:
         email1 = Email("test1@email.com")
         username1 = "username123"
 
-        user1 = User(name1, email1, username1)
+        user1 = User(name=name1, email=email1, username=username1)
 
         name2 = Name("TestTwo")
         email2 = Email("test2@email.com")
         username2 = "username234"
 
-        user2 = User(name2, email2, username2)
+        user2 = User(name=name2, email=email2, username=username2)
 
 
         mock_repository.list_users.return_value = [user1, user2]
@@ -78,3 +78,18 @@ class TestUserService:
         assert user2 in users
         assert len(users) == 2
         mock_repository.list_users.assert_called_once()
+
+    def test_should_update_user(self):
+        mock_user = MagicMock()
+        mock_repository = MagicMock()
+        fake_id = "any-fake-id"
+        payload = {"name": "New Name"}
+        service = UserService(repository=mock_repository)
+
+        mock_repository.get_user_by_id.return_value = mock_user
+
+        service.update_user(user_id=fake_id, payload={"name": "New Name"})
+
+        mock_repository.get_user_by_id.assert_called_once_with(user_id=fake_id)
+        mock_user.rename.assert_called_once_with(payload["name"])
+        mock_repository.save.assert_called_once_with(mock_user)
