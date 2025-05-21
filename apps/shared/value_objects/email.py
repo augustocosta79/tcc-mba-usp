@@ -2,6 +2,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 import re
 
+EMAIL_REGEX = r"^[\w\.-]+@[\w\.-]+\.\w+$"
 
 class Email:
     def __init__(self, value: str):
@@ -9,7 +10,6 @@ class Email:
         self._validate()
 
     def _validate(self):
-        EMAIL_REGEX = r"^[\w\.-]+@[\w\.-]+\.\w+$"
         
         if not re.match(EMAIL_REGEX, self.value):
             raise ValueError("Insira um email válido")

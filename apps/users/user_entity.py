@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 from apps.shared.value_objects.email import Email
 from apps.shared.value_objects.name import Name
+from apps.shared.value_objects.password import Password
 
 
 class User:
@@ -10,6 +11,7 @@ class User:
         self,
         name: Name,
         email: Email,
+        password: Password,
         id: Optional[str] = None,
         username: Optional[str] = None,
         is_active: Optional[bool] = None,
@@ -17,8 +19,9 @@ class User:
         self._id = id or uuid4()
         self._name = name
         self._email = email
+        self._password = password
         self._username = username or ""
-        self._is_active = is_active or True
+        self._is_active = is_active if is_active is not None else True
 
     @property
     def id(self) -> UUID:
@@ -31,6 +34,10 @@ class User:
     @property
     def email(self) -> Email:
         return self._email
+    
+    @property
+    def password(self) -> Password:
+        return self._password
 
     @property
     def username(self) -> str:
@@ -40,8 +47,19 @@ class User:
     def is_active(self) -> bool:
         return self._is_active
 
-    def rename(self, new_name: Name) -> None:
+    def rename(self, new_name: str) -> None:
         self._name = Name(new_name)
 
     def change_username(self, new_username: str) -> None:
         self._username = new_username
+
+    def change_password(self, current_raw_password, new_raw_password: str) -> None:
+        if self.password.verify(current_raw_password):
+            self._password = Password(new_raw_password)
+
+    def activate(self):
+        self._is_active = True
+
+    def deactivate(self):
+        self._is_active = False
+        

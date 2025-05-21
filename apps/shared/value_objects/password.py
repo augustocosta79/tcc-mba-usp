@@ -22,6 +22,13 @@ class Password:
     def verify(self, raw_password):
         return check_password(raw_password, self._hashed_password)
     
+    @classmethod
+    def from_hash(cls, hashed_password: str):
+        obj = cls.__new__(cls)         # cria instância sem chamar __init__
+        obj._hashed_password = hashed_password
+        return obj
+
+    
     @property
     def hash(self):
         return self._hashed_password
