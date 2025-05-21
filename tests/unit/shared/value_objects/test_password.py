@@ -41,3 +41,13 @@ class TestPassword:
         # Mas ambos devem verificar a mesma senha com verify
         assert pwd1.verify("Abc@1234")
         assert pwd2.verify("Abc@1234")
+
+    def test_should_create_password_from_hash(self):
+        valid_raw_password = "Abc@1234"
+        original_password = Password(valid_raw_password)
+
+        hash = str(original_password.hash)
+
+        password_from_hash = Password.from_hash(hash)
+
+        assert password_from_hash.verify(valid_raw_password) is True
