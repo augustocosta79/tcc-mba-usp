@@ -11,6 +11,7 @@ class ProductSchema(BaseModel):
     price: str
     stock: int
     owner_id: UUID
+    category: str
     created_at: datetime
     updated_at: datetime
 
@@ -22,3 +23,4 @@ class ProductCreateSchema(BaseModel):
     price: Decimal
     stock: int
     owner_id: UUID
+    category: str

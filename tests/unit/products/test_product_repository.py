@@ -22,12 +22,15 @@ def create_product_and_repository():
 
     owner_id = uuid4()
 
+    category = "test"
+
     product = Product(
         title,
         description,
         price,
         stock,
-        owner_id
+        owner_id,
+        category
     )
 
     repository = ProductRepository()
@@ -69,6 +72,17 @@ class TestProductRepository:
         assert retrieved_product.updated_at is not None
         assert isinstance(retrieved_product.created_at, datetime)
         assert isinstance(retrieved_product.updated_at, datetime)
+
+    def test_should_list_products_by_category(self, create_product_and_repository):
+        product, repository = create_product_and_repository
+        saved_product = repository.save(product)
+
+        products = repository.list_products_by_category(category=product.category)
+
+        assert isinstance(products, list)
+        assert len(products) == 1
+        assert products[0].id == saved_product.id
+
 
 
 

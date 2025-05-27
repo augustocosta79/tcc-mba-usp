@@ -14,7 +14,8 @@ class ProductService:
             description: Description,
             price: Price,
             stock: Stock,
-            owner_id: UUID
+            owner_id: UUID,
+            category: str
     ) -> Product:
         
         product = Product(
@@ -22,7 +23,8 @@ class ProductService:
             description,
             price,
             stock,
-            owner_id
+            owner_id,
+            category
         )
 
         saved_product = self.repository.save(product)
@@ -33,3 +35,6 @@ class ProductService:
         if not (product:=self.repository.get_product_by_id(product_id)):
             raise NotFoundError(f"Product with id {product_id} not found")
         return product
+    
+    def list_products_by_category(self, category: str):
+        return self.repository.list_products_by_category(category)

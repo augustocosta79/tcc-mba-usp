@@ -10,6 +10,7 @@ from apps.shared.value_objects import Description, Price, Stock, Title
 from ninja import Router
 from ninja.errors import HttpError
 from utils.error_schema import ErrorSchema
+from typing import List
 
 products_router = Router()
 
@@ -31,9 +32,10 @@ def create_product(request, payload: ProductCreateSchema):
         price = Price(payload.price)
         stock = Stock(payload.stock)
         owner_id = payload.owner_id
+        category = payload.category
 
         created_product = service.create_product(
-            title, description, price, stock, owner_id
+            title, description, price, stock, owner_id, category
         )
 
         return HTTPStatus.CREATED, ProductSchema(
@@ -43,6 +45,7 @@ def create_product(request, payload: ProductCreateSchema):
             price=str(created_product.price.value),
             stock=created_product.stock.value,
             owner_id=created_product.owner_id,
+            category=created_product.category,
             created_at=created_product.created_at,
             updated_at=created_product.updated_at,
         )
@@ -65,8 +68,32 @@ def get_product_by_id(request, product_id: UUID):
             price=str(product.price.value),
             stock=product.stock.value,
             owner_id=product.owner_id,
+            category=product.category,
             created_at=product.created_at,
             updated_at=product.updated_at,
         )
     except NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
+    
+
+@products_router.get(
+    "",
+    response={HTTPStatus.OK: List[ProductSchema]},
+)
+def list_products_by_category(request, category: str):
+    products = service.list_products_by_category(category)
+    return [
+        ProductSchema(
+            id=product.id,
+            title=product.title.text,
+            description=product.description.text,
+            price=str(product.price.value),
+            stock=product.stock.value,
+            owner_id=product.owner_id,
+            category=product.category,
+            created_at=product.created_at,
+            updated_at=product.updated_at,
+        )
+
+        for product in products
+    ]

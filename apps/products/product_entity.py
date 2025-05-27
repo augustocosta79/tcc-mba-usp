@@ -11,6 +11,7 @@ class Product:
         price: Decimal,
         stock: int,
         owner_id: UUID,
+        category: str,
         id: Optional[UUID] = None,
         is_active: Optional[bool] = None,
         created_at: Optional[datetime] = None,
@@ -22,6 +23,7 @@ class Product:
         self._price = price
         self._stock = stock
         self._owner_id = owner_id
+        self._category = category
         self._is_active = is_active if is_active is not None else True
         self._created_at = created_at
         self._updated_at = updated_at
@@ -49,6 +51,10 @@ class Product:
     @property
     def owner_id(self) -> UUID:
         return self._owner_id
+    
+    @property
+    def category(self) -> str:
+        return self._category
     
     @property
     def is_active(self):

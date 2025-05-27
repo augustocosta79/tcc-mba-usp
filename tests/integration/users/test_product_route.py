@@ -22,7 +22,9 @@ def create_product_parameters():
 
     owner_id = uuid4()
 
-    return title, description, price, stock, owner_id
+    category = "test"
+
+    return title, description, price, stock, owner_id, category
 
 
 @pytest.fixture
@@ -30,9 +32,9 @@ def create_test_product(create_product_parameters):
     repository = ProductRepository()
     service = ProductService(repository)
 
-    title, description, price, stock, owner_id = create_product_parameters
+    title, description, price, stock, owner_id, category = create_product_parameters
     
-    product = service.create_product(title, description, price, stock, owner_id)
+    product = service.create_product(title, description, price, stock, owner_id, category)
 
     return product
 
@@ -46,6 +48,7 @@ class TestCreateProduct:
             "price": "1.99",
             "stock": 3,
             "owner_id": str(uuid4()),
+            "category": "test"
         }
 
         response = client.post(
@@ -62,6 +65,7 @@ class TestCreateProduct:
         assert body["price"] == valid_payload["price"]
         assert body["stock"] == valid_payload["stock"]
         assert body["owner_id"] == valid_payload["owner_id"]
+        assert body["category"] == valid_payload["category"]
         assert "created_at" in body
         assert "updated_at" in body
         created_at = body["created_at"]
@@ -88,3 +92,20 @@ class TestGetProductbyId:
         assert retrived_product["price"] == str(existing_product.price.value)
         assert retrived_product["stock"] == existing_product.stock.value
         assert retrived_product["owner_id"] == str(existing_product.owner_id)
+        assert retrived_product["category"] == existing_product.category
+
+@pytest.mark.django_db
+class TestGetProductByCategory:
+    def test_should_list_products_by_category_successfully(self, client, create_test_product):
+        product = create_test_product
+
+        response = client.get("/api/products", {"category": product.category})
+        print(response.content)
+        assert response.status_code == 200
+
+        products = response.json()
+
+        assert isinstance(products, list)
+        assert len(products) == 1
+        assert products[0]["id"] == str(product.id)
+        assert products[0]["category"] == product.category
