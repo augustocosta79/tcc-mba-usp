@@ -111,16 +111,23 @@ class TestGetProductByCategory:
         assert products[0]["id"] == str(product.id)
         assert products[0]["category"] == product.category
 
+@pytest.fixture
+def send_update_request():
+        def _send_update_request(client, product_id, payload):
+            response = client.patch(f"/api/products/{product_id}", payload, content_type="application/json")
+            assert response.status_code == 200
+            body = response.json()
+
+            return body
+        return _send_update_request
+
 @pytest.mark.django_db
 class TestUpdateProduct:
-    def test_should_update_product_data_successfully(self, client, create_test_product):
-        title_payload = { "title": "changed title" }
+    def test_should_update_product_data_successfully(self, client, create_test_product, send_update_request):
         product = create_test_product
 
-        response = client.patch(f"/api/products/{product.id}", title_payload, content_type="application/json")
-        assert response.status_code == 200
-
-        body = response.json()
+        title_payload = { "title": "changed title" }
+        body = send_update_request(client, product.id, title_payload)
 
         assert body["id"] == str(product.id)
         assert body["title"] == title_payload["title"]
@@ -130,3 +137,9 @@ class TestUpdateProduct:
         assert body["owner_id"] == str(product.owner_id)
         assert body["category"] == product.category
         assert body["is_active"] is product.is_active
+
+        description_payload = { "description": "changed description" }
+        body = send_update_request(client, product.id, description_payload)
+
+        assert body["id"] == str(product.id)
+        assert body["description"] == description_payload["description"]

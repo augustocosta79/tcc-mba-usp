@@ -45,7 +45,8 @@ class ProductService:
             raise NotFoundError(f"Product with id {product_id} not found")
         
         operations = {
-            "title": product.change_title
+            "title": product.change_title,
+            "description": product.change_description
         }
         
         for attr, value in payload.model_dump(exclude_none=True).items():

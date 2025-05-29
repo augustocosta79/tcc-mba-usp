@@ -34,6 +34,15 @@ def mock_repository_and_service():
     return mock_repository, service
 
 
+@pytest.fixture
+def update_product():
+    def _update_product(service, product_id, payload):
+        payload_schema = ProductUpdateSchema(**payload)
+        service.update_product(product_id, payload_schema)
+    return _update_product        
+        
+
+
 class TestProductService:
     def test_should_create_product_with_valid_data(self, product_args, mock_product, mock_repository_and_service):
         title, description, price, stock, owner_id, category = product_args
@@ -104,7 +113,7 @@ class TestProductService:
           assert mock_product in products
 
 
-    def test_should_update_product(self, mock_repository_and_service):
+    def test_should_update_product(self, mock_repository_and_service, update_product):
             mock_repository, service = mock_repository_and_service
 
             mock_product = MagicMock()
@@ -112,11 +121,13 @@ class TestProductService:
             mock_repository.get_product_by_id.return_value = mock_product
 
             title_payload = {"title": "Changed title"}
-            payload_schema = ProductUpdateSchema(**title_payload)
+            update_product(service, mock_product.id, title_payload)
 
-            service.update_product(mock_product.id, payload_schema)
-
-            mock_repository.get_product_by_id.assert_called_once()
+            mock_repository.get_product_by_id.assert_called_once_with(mock_product.id)
             mock_product.change_title.assert_called_once_with(title_payload["title"])
             mock_repository.update_product.assert_called_once_with(mock_product)
+
+            description_payload = { "description": "new description" }
+            update_product(service, mock_product.id, description_payload)
+            mock_product.change_description.assert_called_once_with(description_payload["description"])
 

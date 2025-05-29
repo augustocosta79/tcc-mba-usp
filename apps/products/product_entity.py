@@ -73,3 +73,7 @@ class Product:
     def change_title(self, new_title: str):
         self._title = Title(new_title)
         return
+    
+    def change_description(self, new_description):
+        self._description = Description(new_description)
+        return
