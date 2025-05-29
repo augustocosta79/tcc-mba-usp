@@ -3,6 +3,7 @@ from apps.products.service import ProductService
 from apps.products.product_entity import Product
 from uuid import UUID, uuid4
 from apps.shared.value_objects import Price, Stock, Title, Description
+from apps.products.schema import ProductUpdateSchema
 from unittest.mock import MagicMock
 import pytest
 
@@ -26,16 +27,21 @@ def mock_product(product_args):
         mock_product = Product(title, description, price, stock, owner_id, category, uuid4(), True, datetime.now(), datetime.now())
         return mock_product
 
+@pytest.fixture
+def mock_repository_and_service():
+    mock_repository = MagicMock()
+    service = ProductService(mock_repository)
+    return mock_repository, service
+
 
 class TestProductService:
-    def test_should_create_product_with_valid_data(self, product_args, mock_product):
+    def test_should_create_product_with_valid_data(self, product_args, mock_product, mock_repository_and_service):
         title, description, price, stock, owner_id, category = product_args
 
-        mock_repository = MagicMock()
+        mock_repository, service = mock_repository_and_service
 
         mock_repository.save.return_value = mock_product
 
-        service = ProductService(mock_repository)
 
 
         product = service.create_product(
@@ -63,12 +69,10 @@ class TestProductService:
         assert product.updated_at is not None
         mock_repository.save.assert_called_once
 
-    def test_should_get_product_by_id_successfully(self, product_args, mock_product):
+    def test_should_get_product_by_id_successfully(self, product_args, mock_product, mock_repository_and_service):
         title, description, price, stock, owner_id, category = product_args
 
-        mock_repository = MagicMock()
-
-        service = ProductService(mock_repository)
+        mock_repository, service = mock_repository_and_service
 
         mock_repository.get_product_by_id.return_value = mock_product
 
@@ -89,9 +93,8 @@ class TestProductService:
         assert retrieved_product.updated_at is not None
         mock_repository.get_product_by_id.assert_called_once_with(mock_product.id)
 
-    def test_should_list_products_by_category_successfully(self, product_args, mock_product):
-          mock_repository = MagicMock()
-          service = ProductService(mock_repository)
+    def test_should_list_products_by_category_successfully(self, product_args, mock_product, mock_repository_and_service):
+          mock_repository, service  = mock_repository_and_service
 
           mock_repository.list_products_by_category.return_value = [mock_product]
 
@@ -99,4 +102,21 @@ class TestProductService:
 
           assert mock_repository.list_products_by_category.assert_called_once
           assert mock_product in products
+
+
+    def test_should_update_product(self, mock_repository_and_service):
+            mock_repository, service = mock_repository_and_service
+
+            mock_product = MagicMock()
+
+            mock_repository.get_product_by_id.return_value = mock_product
+
+            title_payload = {"title": "Changed title"}
+            payload_schema = ProductUpdateSchema(**title_payload)
+
+            service.update_product(mock_product.id, payload_schema)
+
+            mock_repository.get_product_by_id.assert_called_once()
+            mock_product.change_title.assert_called_once_with(title_payload["title"])
+            mock_repository.update_product.assert_called_once_with(mock_product)
 

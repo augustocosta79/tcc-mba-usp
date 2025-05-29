@@ -1,5 +1,6 @@
 from apps.products.repository_interface import ProductRepositoryInterface
 from apps.products.product_entity import Product
+from apps.products.schema import ProductUpdateSchema
 from apps.shared.value_objects import Title, Description, Price, Stock
 from apps.shared.exceptions import NotFoundError
 from uuid import UUID
@@ -36,5 +37,20 @@ class ProductService:
             raise NotFoundError(f"Product with id {product_id} not found")
         return product
     
-    def list_products_by_category(self, category: str):
+    def list_products_by_category(self, category: str) -> list[Product]:
         return self.repository.list_products_by_category(category)
+    
+    def update_product(self, product_id: UUID, payload: ProductUpdateSchema) -> Product:        
+        if not (product := self.repository.get_product_by_id(product_id)):
+            raise NotFoundError(f"Product with id {product_id} not found")
+        
+        operations = {
+            "title": product.change_title
+        }
+        
+        for attr, value in payload.model_dump(exclude_none=True).items():
+            operations[attr](value)
+
+        updated_product = self.repository.update_product(product)
+
+        return updated_product

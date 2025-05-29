@@ -63,3 +63,30 @@ class ProductRepository(ProductRepositoryInterface):
 
             for product_data in products_data
         ]
+    
+    def update_product(self, product: Product):
+        if not (product_data := ProductModel.objects.filter(id=product.id).first()):
+            return None
+
+        product_data.title = product.title.text
+        product_data.description = product.description.text
+        product_data.price = product.price.value
+        product_data.stock = product.stock.value
+        product_data.owner_id = product.owner_id
+        product_data.category = product.category
+        product_data.is_active = product.is_active
+
+        product_data.save()
+
+        return Product(
+                id=product_data.id,
+                title=Title(product_data.title),
+                description=Description(product_data.description),
+                price=Price(product_data.price),
+                stock=Stock(product_data.stock),
+                owner_id=product_data.owner_id,
+                category=product_data.category,
+                is_active=product_data.is_active,
+                created_at=product_data.created_at,
+                updated_at=product_data.updated_at
+            )

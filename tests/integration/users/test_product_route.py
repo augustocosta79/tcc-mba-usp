@@ -93,6 +93,7 @@ class TestGetProductbyId:
         assert retrived_product["stock"] == existing_product.stock.value
         assert retrived_product["owner_id"] == str(existing_product.owner_id)
         assert retrived_product["category"] == existing_product.category
+        assert retrived_product["is_active"] is existing_product.is_active
 
 @pytest.mark.django_db
 class TestGetProductByCategory:
@@ -109,3 +110,23 @@ class TestGetProductByCategory:
         assert len(products) == 1
         assert products[0]["id"] == str(product.id)
         assert products[0]["category"] == product.category
+
+@pytest.mark.django_db
+class TestUpdateProduct:
+    def test_should_update_product_data_successfully(self, client, create_test_product):
+        title_payload = { "title": "changed title" }
+        product = create_test_product
+
+        response = client.patch(f"/api/products/{product.id}", title_payload, content_type="application/json")
+        assert response.status_code == 200
+
+        body = response.json()
+
+        assert body["id"] == str(product.id)
+        assert body["title"] == title_payload["title"]
+        assert body["description"] == product.description.text
+        assert body["price"] == str(product.price.value)
+        assert body["stock"] == product.stock.value
+        assert body["owner_id"] == str(product.owner_id)
+        assert body["category"] == product.category
+        assert body["is_active"] is product.is_active

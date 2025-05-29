@@ -3,7 +3,7 @@ from http import HTTPStatus
 from uuid import UUID
 
 from apps.products.repository import ProductRepository
-from apps.products.schema import ProductCreateSchema, ProductSchema
+from apps.products.schema import ProductCreateSchema, ProductSchema, ProductUpdateSchema
 from apps.products.service import ProductService
 from apps.shared.exceptions import NotFoundError
 from apps.shared.value_objects import Description, Price, Stock, Title
@@ -46,6 +46,7 @@ def create_product(request, payload: ProductCreateSchema):
             stock=created_product.stock.value,
             owner_id=created_product.owner_id,
             category=created_product.category,
+            is_active=created_product.is_active,
             created_at=created_product.created_at,
             updated_at=created_product.updated_at,
         )
@@ -69,6 +70,7 @@ def get_product_by_id(request, product_id: UUID):
             stock=product.stock.value,
             owner_id=product.owner_id,
             category=product.category,
+            is_active=product.is_active,
             created_at=product.created_at,
             updated_at=product.updated_at,
         )
@@ -91,9 +93,33 @@ def list_products_by_category(request, category: str):
             stock=product.stock.value,
             owner_id=product.owner_id,
             category=product.category,
+            is_active=product.is_active,
             created_at=product.created_at,
             updated_at=product.updated_at,
         )
 
         for product in products
     ]
+
+@products_router.patch("/{product_id}", response = {HTTPStatus.OK: ProductSchema, HTTPStatus.NOT_FOUND: ErrorSchema})
+def update_product(request, product_id: UUID, payload: ProductUpdateSchema):
+    try:
+        product = service.get_product_by_id(product_id)
+        updated_product = service.update_product(product.id, payload)
+
+        return ProductSchema(
+            id=updated_product.id,
+            title=updated_product.title.text,
+            description=updated_product.description.text,
+            price=str(updated_product.price.value),
+            stock=updated_product.stock.value,
+            owner_id=updated_product.owner_id,
+            category=updated_product.category,
+            is_active=updated_product.is_active,
+            created_at=updated_product.created_at,
+            updated_at=updated_product.updated_at,
+        )
+    except NotFoundError as exc:
+        raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
+    except Exception as exc:
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))

@@ -2,6 +2,7 @@ from uuid import UUID, uuid4
 from decimal import Decimal
 from typing import Optional
 from datetime import datetime
+from apps.shared.value_objects import Title, Description, Price, Stock
 
 class Product:
     def __init__(
@@ -67,3 +68,8 @@ class Product:
     @property
     def updated_at(self):
         return self._updated_at
+    
+
+    def change_title(self, new_title: str):
+        self._title = Title(new_title)
+        return

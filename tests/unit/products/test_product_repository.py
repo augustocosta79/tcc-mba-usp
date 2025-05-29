@@ -83,6 +83,20 @@ class TestProductRepository:
         assert len(products) == 1
         assert products[0].id == saved_product.id
 
+    def test_should_update_persisted_product_data_successfully(self, create_product_and_repository):
+        product, repository = create_product_and_repository
+        repository.save(product)
+
+        new_title = "changed title"
+
+        product.change_title(new_title)
+
+        updated_product = repository.update_product(product)
+        
+        assert isinstance(updated_product, Product)
+        assert updated_product.title.text == new_title
+        assert updated_product.id == product.id
+
 
 
 
