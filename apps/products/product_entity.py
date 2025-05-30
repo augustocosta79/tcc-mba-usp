@@ -74,6 +74,10 @@ class Product:
         self._title = Title(new_title)
         return
     
-    def change_description(self, new_description):
+    def change_description(self, new_description: str):
         self._description = Description(new_description)
+        return
+    
+    def change_price(self, new_price: str):
+        self._price = Price(new_price)
         return
