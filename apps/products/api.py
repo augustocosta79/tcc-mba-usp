@@ -3,7 +3,12 @@ from http import HTTPStatus
 from uuid import UUID
 
 from apps.products.repository import ProductRepository
-from apps.products.schema import ProductCreateSchema, ProductSchema, ProductUpdateSchema
+from apps.products.schema import (
+    ProductCreateSchema,
+    ProductSchema,
+    ProductUpdateSchema,
+    ProductActivationSchema,
+)
 from apps.products.service import ProductService
 from apps.shared.exceptions import NotFoundError
 from apps.shared.value_objects import Description, Price, Stock, Title
@@ -28,7 +33,12 @@ service = ProductService(repository)
 def create_product(request, payload: ProductCreateSchema):
     try:
         created_product = service.create_product(
-            payload.title, payload.description, payload.price, payload.stock, payload.owner_id, payload.category
+            payload.title,
+            payload.description,
+            payload.price,
+            payload.stock,
+            payload.owner_id,
+            payload.category,
         )
 
         return HTTPStatus.CREATED, ProductSchema(
@@ -69,7 +79,7 @@ def get_product_by_id(request, product_id: UUID):
         )
     except NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
-    
+
 
 @products_router.get(
     "",
@@ -90,11 +100,14 @@ def list_products_by_category(request, category: str):
             created_at=product.created_at,
             updated_at=product.updated_at,
         )
-
         for product in products
     ]
 
-@products_router.patch("/{product_id}", response = {HTTPStatus.OK: ProductSchema, HTTPStatus.NOT_FOUND: ErrorSchema})
+
+@products_router.patch(
+    "/{product_id}",
+    response={HTTPStatus.OK: ProductSchema, HTTPStatus.NOT_FOUND: ErrorSchema},
+)
 def update_product(request, product_id: UUID, payload: ProductUpdateSchema):
     try:
         product = service.get_product_by_id(product_id)
@@ -116,3 +129,33 @@ def update_product(request, product_id: UUID, payload: ProductUpdateSchema):
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
     except Exception as exc:
         raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+
+
+@products_router.patch(
+    "{product_id}/activation",
+    response={
+        HTTPStatus.OK: ProductSchema,
+        HTTPStatus.NOT_FOUND: ErrorSchema,
+        HTTPStatus.INTERNAL_SERVER_ERROR: ErrorSchema,
+    },
+)
+def product_activation(request, product_id: UUID, payload: ProductActivationSchema):
+    try:
+        product = service.product_activation(product_id, payload)
+        return ProductSchema(
+            id=product.id,
+            title=product.title.text,
+            description=product.description.text,
+            price=str(product.price.value),
+            stock=product.stock.value,
+            owner_id=product.owner_id,
+            category=product.category,
+            is_active=product.is_active,
+            created_at=product.created_at,
+            updated_at=product.updated_at,
+        )
+    except NotFoundError as exc:
+        raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
+    except Exception as exc:
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    

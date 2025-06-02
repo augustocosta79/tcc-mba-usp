@@ -157,6 +157,8 @@ class TestProductService:
          mock_product.deactivate.assert_called_once
 
          mock_repository.get_product_by_id.assert_called_with(mock_product.id)
+         mock_repository.update_product.assert_called_with(mock_product)
          assert mock_repository.get_product_by_id.call_count == 2
+         assert mock_repository.update_product.call_count == 2
          
 

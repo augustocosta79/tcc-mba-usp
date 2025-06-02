@@ -74,7 +74,7 @@ class ProductService:
         
         if payload.status is True:
             product.activate()
-            return product
-        
-        product.deactivate()        
-        return product
+        else:
+            product.deactivate()
+
+        return self.repository.update_product(product)

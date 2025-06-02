@@ -120,6 +120,14 @@ class TestProductRepository:
         updated_product = repository.update_product(product)
         assert updated_product.category == new_category
 
+        product.deactivate()
+        updated_product = repository.update_product(product)
+        assert updated_product.is_active is False
+        
+        product.activate()
+        updated_product = repository.update_product(product)
+        assert updated_product.is_active is True
+
 
 
 

@@ -143,3 +143,30 @@ class TestUpdateProduct:
         category_payload = { "category": f"{str(uuid4())}" }
         body = send_update_request(client, product.id, category_payload)
         assert body["category"] == category_payload["category"]
+
+
+@pytest.mark.django_db
+class TestProductActivation:
+    def test_should_activate_product_successfully(self, client, create_test_product):
+        product = create_test_product
+        activation_payload = { "status": True }
+
+        activation_response = client.patch(f"/api/products/{product.id}/activation", activation_payload, content_type="application/json")
+        assert activation_response.status_code == 200
+
+        activation_body = activation_response.json()
+
+        assert activation_body["id"] == str(product.id)
+        assert activation_body["is_active"] is True
+        
+        deactivation_payload = { "status": False }
+
+        deactivation_response = client.patch(f"/api/products/{product.id}/activation", deactivation_payload, content_type="application/json")
+        assert deactivation_response.status_code == 200
+
+        deactivation_body = deactivation_response.json()
+
+        assert deactivation_body["id"] == str(product.id)
+        assert deactivation_body["is_active"] is False
+
+
