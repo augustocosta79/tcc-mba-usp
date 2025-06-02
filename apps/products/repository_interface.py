@@ -8,3 +8,11 @@ class ProductRepositoryInterface(ABC):
     @abstractmethod
     def get_product_by_id(self):
         pass
+
+    @abstractmethod
+    def list_products_by_category(self):
+        pass
+
+    @abstractmethod
+    def update_product(self):
+        pass
