@@ -4,7 +4,7 @@ from apps.products.service import ProductService
 from apps.products.product_entity import Product
 from uuid import UUID, uuid4
 from apps.shared.value_objects import Price, Stock, Title, Description
-from apps.products.schema import ProductUpdateSchema
+from apps.products.schema import ProductUpdateSchema, ProductActivationSchema
 from unittest.mock import MagicMock
 import pytest
 
@@ -98,45 +98,65 @@ class TestProductService:
         mock_repository.get_product_by_id.assert_called_once_with(mock_product.id)
 
     def test_should_list_products_by_category_successfully(self, product_args, mock_product, mock_repository_and_service):
-          mock_repository, service  = mock_repository_and_service
+        mock_repository, service  = mock_repository_and_service
 
-          mock_repository.list_products_by_category.return_value = [mock_product]
+        mock_repository.list_products_by_category.return_value = [mock_product]
 
-          products = service.list_products_by_category(category="test")
+        products = service.list_products_by_category(category="test")
 
-          assert mock_repository.list_products_by_category.assert_called_once
-          assert mock_product in products
+        assert mock_repository.list_products_by_category.assert_called_once
+        assert mock_product in products
 
 
     def test_should_update_product(self, mock_repository_and_service, update_product):
-            mock_repository, service = mock_repository_and_service
+        mock_repository, service = mock_repository_and_service
 
-            mock_product = MagicMock()
+        mock_product = MagicMock()
 
-            mock_repository.get_product_by_id.return_value = mock_product
+        mock_repository.get_product_by_id.return_value = mock_product
 
-            title_payload = {"title": "Changed title"}
-            update_product(service, mock_product.id, title_payload)
+        title_payload = {"title": "Changed title"}
+        update_product(service, mock_product.id, title_payload)
 
-            mock_repository.get_product_by_id.assert_called_once_with(mock_product.id)
-            mock_product.change_title.assert_called_once_with(title_payload["title"])
-            mock_repository.update_product.assert_called_once_with(mock_product)
+        mock_repository.get_product_by_id.assert_called_once_with(mock_product.id)
+        mock_product.change_title.assert_called_once_with(title_payload["title"])
+        mock_repository.update_product.assert_called_once_with(mock_product)
 
-            description_payload = { "description": "new description" }
-            update_product(service, mock_product.id, description_payload)
-            mock_product.change_description.assert_called_once_with(description_payload["description"])
+        description_payload = { "description": "new description" }
+        update_product(service, mock_product.id, description_payload)
+        mock_product.change_description.assert_called_once_with(description_payload["description"])
 
-            price_payload = { "price": "2.99" }
-            update_product(service, mock_product.id, price_payload)
-            mock_product.change_price.assert_called_once_with(price_payload["price"])
-            
-            
-            stock_payload = { "stock": 3 }
-            update_product(service, mock_product.id, stock_payload)
-            mock_product.change_stock.assert_called_once_with(stock_payload["stock"])
-            
-            
-            category_payload = { "category": str(uuid4()) }
-            update_product(service, mock_product.id, category_payload)
-            mock_product.change_category.assert_called_once_with(category_payload["category"])
+        price_payload = { "price": "2.99" }
+        update_product(service, mock_product.id, price_payload)
+        mock_product.change_price.assert_called_once_with(price_payload["price"])
+        
+        
+        stock_payload = { "stock": 3 }
+        update_product(service, mock_product.id, stock_payload)
+        mock_product.change_stock.assert_called_once_with(stock_payload["stock"])
+        
+        
+        category_payload = { "category": str(uuid4()) }
+        update_product(service, mock_product.id, category_payload)
+        mock_product.change_category.assert_called_once_with(category_payload["category"])
+
+    def test_should_activate_and_deactivate_product_successfully(self,  mock_repository_and_service):
+         mock_repository, service = mock_repository_and_service
+
+         mock_product = MagicMock()
+
+         mock_repository.get_product_by_id.return_value = mock_product
+
+         activate_payload = ProductActivationSchema(status=True)
+         service.product_activation(mock_product.id, activate_payload)
+         mock_product.activate.assert_called_once
+         
+         
+         deactivate_payload = ProductActivationSchema(status=False)
+         service.product_activation(mock_product.id, deactivate_payload)
+         mock_product.deactivate.assert_called_once
+
+         mock_repository.get_product_by_id.assert_called_with(mock_product.id)
+         assert mock_repository.get_product_by_id.call_count == 2
+         
 

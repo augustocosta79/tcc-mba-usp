@@ -1,6 +1,6 @@
 from apps.products.repository_interface import ProductRepositoryInterface
 from apps.products.product_entity import Product
-from apps.products.schema import ProductUpdateSchema
+from apps.products.schema import ProductUpdateSchema, ProductActivationSchema
 from apps.shared.value_objects import Title, Description, Price, Stock
 from apps.shared.exceptions import NotFoundError
 from uuid import UUID
@@ -65,3 +65,16 @@ class ProductService:
         updated_product = self.repository.update_product(product)
 
         return updated_product
+    
+    def product_activation(self, product_id: UUID, payload: ProductActivationSchema):
+        product = self.repository.get_product_by_id(product_id)
+
+        if not product:
+            raise NotFoundError(f"Product with id {product_id} not found")
+        
+        if payload.status is True:
+            product.activate()
+            return product
+        
+        product.deactivate()        
+        return product

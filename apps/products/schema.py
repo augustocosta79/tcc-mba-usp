@@ -34,3 +34,6 @@ class ProductUpdateSchema(BaseModel):
     owner_id: Optional[UUID] = None
     category: Optional[str] = None
     is_active: Optional[bool] = None
+
+class ProductActivationSchema(BaseModel):
+    status: bool

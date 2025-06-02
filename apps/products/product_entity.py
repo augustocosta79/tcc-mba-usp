@@ -72,20 +72,21 @@ class Product:
 
     def change_title(self, new_title: str):
         self._title = Title(new_title)
-        return
     
     def change_description(self, new_description: str):
         self._description = Description(new_description)
-        return
     
     def change_price(self, new_price: str):
         self._price = Price(new_price)
-        return
     
     def change_stock(self, new_stock: int):
         self._stock = Stock(new_stock)
-        return
     
     def change_category(self, new_category: str):
         self._category = new_category
-        return
+    
+    def activate(self):
+        self._is_active = True
+    
+    def deactivate(self):
+        self._is_active = False
