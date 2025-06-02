@@ -130,6 +130,12 @@ class TestUpdateProduct:
 
         description_payload = { "description": "changed description" }
         body = send_update_request(client, product.id, description_payload)
-
-        assert body["id"] == str(product.id)
         assert body["description"] == description_payload["description"]
+        
+        price_payload = { "price": "1.99" }
+        body = send_update_request(client, product.id, price_payload)
+        assert body["price"] == price_payload["price"]
+        
+        stock_payload = { "stock": 3 }
+        body = send_update_request(client, product.id, stock_payload)
+        assert body["stock"] == stock_payload["stock"]

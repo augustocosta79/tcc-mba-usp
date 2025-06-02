@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID, uuid4
 from apps.shared.value_objects import Title, Description, Price, Stock
 from apps.products.product_entity import Product
@@ -88,14 +89,32 @@ class TestProductRepository:
         repository.save(product)
 
         new_title = "changed title"
-
         product.change_title(new_title)
-
         updated_product = repository.update_product(product)
         
         assert isinstance(updated_product, Product)
+        assert updated_product.title == Title(new_title)
         assert updated_product.title.text == new_title
         assert updated_product.id == product.id
+
+        new_description = "changed description"
+        product.change_description(new_description)
+        updated_product = repository.update_product(product)
+        assert updated_product.description == Description(new_description)
+        assert updated_product.description.text == new_description
+
+        new_price = "2.99"
+        product.change_price(new_price)
+        updated_product = repository.update_product(product)
+        assert updated_product.price == Price(new_price)
+        assert updated_product.price.value == Decimal(new_price)
+
+        new_stock = 1
+        product.change_stock(new_stock)
+        updated_product = repository.update_product(product)
+        assert updated_product.stock == Stock(new_stock)
+        assert updated_product.stock.value == new_stock
+
 
 
 

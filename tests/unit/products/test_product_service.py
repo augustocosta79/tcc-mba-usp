@@ -129,4 +129,9 @@ class TestProductService:
             price_payload = { "price": "2.99" }
             update_product(service, mock_product.id, price_payload)
             mock_product.change_price.assert_called_once_with(price_payload["price"])
+            
+            
+            stock_payload = { "stock": 3 }
+            update_product(service, mock_product.id, stock_payload)
+            mock_product.change_stock.assert_called_once_with(stock_payload["stock"])
 

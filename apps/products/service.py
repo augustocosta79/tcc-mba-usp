@@ -54,7 +54,8 @@ class ProductService:
         operations = {
             "title": product.change_title,
             "description": product.change_description,
-            "price": product.change_price
+            "price": product.change_price,
+            "stock": product.change_stock
         }
         
         for attr, value in payload.model_dump(exclude_none=True).items():
