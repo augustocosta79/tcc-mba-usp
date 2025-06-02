@@ -55,7 +55,8 @@ class ProductService:
             "title": product.change_title,
             "description": product.change_description,
             "price": product.change_price,
-            "stock": product.change_stock
+            "stock": product.change_stock,
+            "category": product.change_category
         }
         
         for attr, value in payload.model_dump(exclude_none=True).items():

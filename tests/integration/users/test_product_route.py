@@ -139,3 +139,7 @@ class TestUpdateProduct:
         stock_payload = { "stock": 3 }
         body = send_update_request(client, product.id, stock_payload)
         assert body["stock"] == stock_payload["stock"]
+        
+        category_payload = { "category": f"{str(uuid4())}" }
+        body = send_update_request(client, product.id, category_payload)
+        assert body["category"] == category_payload["category"]

@@ -2,7 +2,6 @@ from datetime import datetime
 from uuid import UUID
 from typing import Optional
 from pydantic import BaseModel
-from decimal import Decimal
 
 class ProductSchema(BaseModel):
     id: UUID

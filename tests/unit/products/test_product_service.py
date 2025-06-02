@@ -134,4 +134,9 @@ class TestProductService:
             stock_payload = { "stock": 3 }
             update_product(service, mock_product.id, stock_payload)
             mock_product.change_stock.assert_called_once_with(stock_payload["stock"])
+            
+            
+            category_payload = { "category": str(uuid4()) }
+            update_product(service, mock_product.id, category_payload)
+            mock_product.change_category.assert_called_once_with(category_payload["category"])
 

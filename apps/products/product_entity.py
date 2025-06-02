@@ -85,3 +85,7 @@ class Product:
     def change_stock(self, new_stock: int):
         self._stock = Stock(new_stock)
         return
+    
+    def change_category(self, new_category: str):
+        self._category = new_category
+        return

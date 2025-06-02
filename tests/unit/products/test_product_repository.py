@@ -115,6 +115,11 @@ class TestProductRepository:
         assert updated_product.stock == Stock(new_stock)
         assert updated_product.stock.value == new_stock
 
+        new_category = str(uuid4())
+        product.change_category(new_category)
+        updated_product = repository.update_product(product)
+        assert updated_product.category == new_category
+
 
 
 
