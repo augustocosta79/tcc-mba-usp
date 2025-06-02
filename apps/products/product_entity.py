@@ -7,10 +7,10 @@ from apps.shared.value_objects import Title, Description, Price, Stock
 class Product:
     def __init__(
         self,
-        title: str,
-        description: str,
-        price: Decimal,
-        stock: int,
+        title: Title,
+        description: Description,
+        price: Price,
+        stock: Stock,
         owner_id: UUID,
         category: str,
         id: Optional[UUID] = None,
@@ -80,4 +80,8 @@ class Product:
     
     def change_price(self, new_price: str):
         self._price = Price(new_price)
+        return
+    
+    def change_stock(self, new_stock: int):
+        self._stock = Stock(new_stock)
         return
