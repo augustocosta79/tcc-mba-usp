@@ -85,48 +85,54 @@ class TestProductRepository:
         assert products[0].id == saved_product.id
 
     def test_should_update_persisted_product_data_successfully(self, create_product_and_repository):
-        product, repository = create_product_and_repository
-        repository.save(product)
+        test_product, repository = create_product_and_repository
+        product = repository.save(test_product)
 
         new_title = "changed title"
         product.change_title(new_title)
-        updated_product = repository.update_product(product)
-        
+        updated_product = repository.update_product(product)        
         assert isinstance(updated_product, Product)
         assert updated_product.title == Title(new_title)
         assert updated_product.title.text == new_title
         assert updated_product.id == product.id
+        assert updated_product.updated_at > product.updated_at
 
         new_description = "changed description"
         product.change_description(new_description)
         updated_product = repository.update_product(product)
         assert updated_product.description == Description(new_description)
         assert updated_product.description.text == new_description
+        assert updated_product.updated_at > product.updated_at
 
         new_price = "2.99"
         product.change_price(new_price)
         updated_product = repository.update_product(product)
         assert updated_product.price == Price(new_price)
         assert updated_product.price.value == Decimal(new_price)
+        assert updated_product.updated_at > product.updated_at
 
         new_stock = 1
         product.change_stock(new_stock)
         updated_product = repository.update_product(product)
         assert updated_product.stock == Stock(new_stock)
         assert updated_product.stock.value == new_stock
+        assert updated_product.updated_at > product.updated_at
 
         new_category = str(uuid4())
         product.change_category(new_category)
         updated_product = repository.update_product(product)
         assert updated_product.category == new_category
+        assert updated_product.updated_at > product.updated_at
 
         product.deactivate()
         updated_product = repository.update_product(product)
         assert updated_product.is_active is False
+        assert updated_product.updated_at > product.updated_at
         
         product.activate()
         updated_product = repository.update_product(product)
         assert updated_product.is_active is True
+        assert updated_product.updated_at > product.updated_at
 
 
 
