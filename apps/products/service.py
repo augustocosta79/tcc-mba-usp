@@ -11,13 +11,20 @@ class ProductService:
 
     def create_product(
             self,
-            title: Title,
-            description: Description,
-            price: Price,
-            stock: Stock,
+            title: str,
+            description: str,
+            price: str,
+            stock: int,
             owner_id: UUID,
             category: str
     ) -> Product:
+        
+        title = Title(title)
+        description = Description(description)
+        price = Price(price)
+        stock = Stock(stock)
+        owner_id = owner_id
+        category = category
         
         product = Product(
             title,
@@ -46,7 +53,8 @@ class ProductService:
         
         operations = {
             "title": product.change_title,
-            "description": product.change_description
+            "description": product.change_description,
+            "price": product.change_price
         }
         
         for attr, value in payload.model_dump(exclude_none=True).items():

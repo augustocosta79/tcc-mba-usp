@@ -2,24 +2,14 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from apps.products.service import ProductService
 from apps.products.repository import ProductRepository
-from apps.shared.value_objects import Title, Description, Price, Stock
-import json
 import pytest
 
 @pytest.fixture
 def create_product_parameters():
-    title_string = "valid Title"
-    title = Title(title_string)
-
-    description_string = "valid desctiprion"
-    description = Description(description_string)
-
-    price_value = "1.99"
-    price = Price(price_value)
-
-    stock_value = 5
-    stock = Stock(stock_value)
-
+    title = "valid Title"
+    description = "valid desctiprion"
+    price = "1.99"
+    stock = 5
     owner_id = uuid4()
 
     category = "test"

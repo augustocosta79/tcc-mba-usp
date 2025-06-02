@@ -21,7 +21,7 @@ class ProductSchema(BaseModel):
 class ProductCreateSchema(BaseModel):
     title: str
     description: str
-    price: Decimal
+    price: str
     stock: int
     owner_id: UUID
     category: str
@@ -30,7 +30,7 @@ class ProductCreateSchema(BaseModel):
 class ProductUpdateSchema(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    price: Optional[Decimal] = None
+    price: Optional[str] = None
     stock: Optional[int] = None
     owner_id: Optional[UUID] = None
     category: Optional[str] = None

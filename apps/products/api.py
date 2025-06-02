@@ -27,15 +27,8 @@ service = ProductService(repository)
 )
 def create_product(request, payload: ProductCreateSchema):
     try:
-        title = Title(payload.title)
-        description = Description(payload.description)
-        price = Price(payload.price)
-        stock = Stock(payload.stock)
-        owner_id = payload.owner_id
-        category = payload.category
-
         created_product = service.create_product(
-            title, description, price, stock, owner_id, category
+            payload.title, payload.description, payload.price, payload.stock, payload.owner_id, payload.category
         )
 
         return HTTPStatus.CREATED, ProductSchema(

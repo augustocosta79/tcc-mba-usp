@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from apps.products.service import ProductService
 from apps.products.product_entity import Product
 from uuid import UUID, uuid4
@@ -9,13 +10,10 @@ import pytest
 
 @pytest.fixture
 def product_args():
-        title_string = "title"
-        title = Title(title_string)
-        description_string = "description"
-        description = Description(description_string)
-        price = Price("1.99")
-        stock_value = 5
-        stock = Stock(stock_value)
+        title = "title"
+        description = "description"
+        price = "1.99"
+        stock = 5
         owner_id = uuid4()
         category = "test"
 
@@ -24,7 +22,7 @@ def product_args():
 @pytest.fixture
 def mock_product(product_args):
         title, description, price, stock, owner_id, category = product_args
-        mock_product = Product(title, description, price, stock, owner_id, category, uuid4(), True, datetime.now(), datetime.now())
+        mock_product = Product(Title(title), Description(description), Price(price), Stock(stock), owner_id, category, uuid4(), True, datetime.now(), datetime.now())
         return mock_product
 
 @pytest.fixture
@@ -65,12 +63,10 @@ class TestProductService:
 
         assert isinstance(product, Product)
         assert isinstance(product.id, UUID)
-        assert product.title.text == title.text
-        assert product.description == description
-        assert product.description.text == description.text
-        assert product.price == price
-        assert product.stock == stock
-        assert product.stock.value == stock.value
+        assert product.title == Title(title)
+        assert product.description == Description(description)
+        assert product.price == Price(price)
+        assert product.stock == Stock(stock)
         assert product.owner_id == owner_id
         assert product.category == category
         assert product.is_active is True
@@ -89,12 +85,11 @@ class TestProductService:
 
         assert isinstance(retrieved_product, Product)
         assert isinstance(retrieved_product.id, UUID)
-        assert retrieved_product.title.text == title.text
-        assert retrieved_product.description == description
-        assert retrieved_product.description.text == description.text
-        assert retrieved_product.price == price
-        assert retrieved_product.stock == stock
-        assert retrieved_product.stock.value == stock.value
+        assert isinstance(retrieved_product.title, Title)
+        assert retrieved_product.title.text == title
+        assert retrieved_product.description == Description(description)
+        assert retrieved_product.price == Price(price)
+        assert retrieved_product.stock == Stock(stock)
         assert retrieved_product.owner_id == owner_id
         assert retrieved_product.category == category
         assert retrieved_product.is_active is True
@@ -130,4 +125,8 @@ class TestProductService:
             description_payload = { "description": "new description" }
             update_product(service, mock_product.id, description_payload)
             mock_product.change_description.assert_called_once_with(description_payload["description"])
+
+            price_payload = { "price": "2.99" }
+            update_product(service, mock_product.id, price_payload)
+            mock_product.change_price.assert_called_once_with(price_payload["price"])
 
