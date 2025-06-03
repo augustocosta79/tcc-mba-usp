@@ -1,9 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from apps.shared.value_objects.email import Email
-from apps.shared.value_objects.name import Name
-from apps.shared.value_objects.password import Password
+from apps.shared.value_objects import Name, Email, Password
 from apps.users.repository_interface import UserRepositoryInterface
 from apps.users.schema import UserUpdateSchema, UserActivationSchema
 from apps.shared.exceptions import ConflictError, UnauthorizedError, NotFoundError
@@ -15,14 +13,14 @@ class UserService:
         self.repository = repository
 
     def create_user(
-        self, name: Name, email: Email, password: Password, username: Optional[str] = None
+        self, name: str, email: str, password: str, username: Optional[str] = None
     ) -> User:
         
         regsitered_user = self.repository.get_user_by_email(user_email=email)
         if regsitered_user is None:
-            user = User(name=name, email=email, username=username, password=password)
-            self.repository.save(user)
-            return user
+            user = User(name=Name(name), email=Email(email), username=username, password=Password(password))
+            saved_user = self.repository.save(user)
+            return saved_user
                 
         raise ConflictError("This e-mail is already in use")
         

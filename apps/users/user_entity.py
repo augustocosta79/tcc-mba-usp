@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -15,6 +16,8 @@ class User:
         id: Optional[str] = None,
         username: Optional[str] = None,
         is_active: Optional[bool] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
     ):
         self._id = id or uuid4()
         self._name = name
@@ -22,6 +25,8 @@ class User:
         self._password = password
         self._username = username or ""
         self._is_active = is_active if is_active is not None else True
+        self._created_at = created_at
+        self._updated_at = updated_at
 
     @property
     def id(self) -> UUID:
@@ -46,6 +51,14 @@ class User:
     @property
     def is_active(self) -> bool:
         return self._is_active
+    
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at
+    
+    @property
+    def updated_at(self) -> datetime:
+        return self._updated_at
 
     def rename(self, new_name: str) -> None:
         self._name = Name(new_name)

@@ -33,11 +33,8 @@ service = UserService(repository=repository)
 )
 def create_user(request, payload: UserCreateSchema):
     try:
-        name = Name(payload.name)
-        email = Email(payload.email)
-        password = Password(payload.password)
         user = service.create_user(
-            name=name, email=email, password=password, username=payload.username
+            name=payload.name, email=payload.email, password=payload.password, username=payload.username
         )
         return HTTPStatus.CREATED, UserSchema(
             id=user.id,

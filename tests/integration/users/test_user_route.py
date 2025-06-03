@@ -10,10 +10,9 @@ from apps.shared.value_objects import Email, Name, Password
 repository = UserRepository()
 service = UserService(repository=repository)
 
-name = Name("Test")
-email = Email("test@email.com")
-raw_password = "Abc@1234"
-password = Password(raw_password)
+name = "Test"
+email = "test@email.com"
+password = "Abc@1234"
 username = "testeusername"
 
 @pytest.fixture
@@ -170,9 +169,9 @@ class TestChangeUserPassword:
     def test_should_change_user_password_successfully(self, client, create_test_user):
         user = create_test_user
 
-        new_raw_password = "abC@1234"
+        new_password = "abC@1234"
 
-        payload = UserPasswordSchema(current_password=raw_password, new_password=new_raw_password)
+        payload = UserPasswordSchema(current_password=password, new_password=new_password)
 
         response = client.patch(
             f"/api/users/{user.id}/password",
@@ -183,7 +182,7 @@ class TestChangeUserPassword:
 
         updated_user = repository.get_user_by_id(user_id=user.id)
 
-        assert updated_user.password.verify(new_raw_password)
+        assert updated_user.password.verify(new_password)
 
 @pytest.mark.django_db
 class TestDeleteUser:

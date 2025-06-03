@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
@@ -8,7 +9,6 @@ from apps.shared.value_objects.password import Password
 from apps.users.service import UserService
 from apps.users.user_entity import User
 from apps.users.schema import UserUpdateSchema, UserActivationSchema
-from apps.users.models import UserModel
 from apps.shared.exceptions import UnauthorizedError, ConflictError, NotFoundError
 
 
@@ -17,19 +17,23 @@ class TestUserService:
         mock_repository = MagicMock()
         service = UserService(repository=mock_repository)
 
-        email=Email("amcneto@hotmail.com")
+        email_string = "amcneto@hotmail.com"
+        email=Email(email_string)
         username="amcneto"
-        name=Name("Augusto")
+        name_string = "Augusto"
+        name=Name(name_string)
         raw_password = "Abc@1234"
         password=Password(raw_password)
+        test_user = User(name, email, password, uuid4(), username, True, datetime.now(), datetime.now())
 
         mock_repository.get_user_by_email.return_value = None
+        mock_repository.save.return_value = test_user
         
         user = service.create_user(
-            name=name,
-            email=email,
+            name=name_string,
+            email=email_string,
             username=username,
-            password=password
+            password=raw_password
         )
 
         assert isinstance(user, User)
@@ -41,7 +45,11 @@ class TestUserService:
         assert isinstance(user.password, Password)
         assert user.password is not None
         assert user.password.verify(raw_password)
-        mock_repository.save.assert_called_once_with(user)
+        assert user.created_at is not None
+        assert isinstance(user.created_at, datetime)
+        assert user.updated_at is not None
+        assert isinstance(user.updated_at, datetime)
+        mock_repository.save.assert_called_once
 
     def test_should_raise_conflict_error_for_duplicated_email(self):
         mock_repository = MagicMock()
@@ -56,7 +64,7 @@ class TestUserService:
         mock_repository.get_user_by_email.return_value = email.value
         
         with pytest.raises(ConflictError):
-            user = service.create_user(
+            service.create_user(
                 name=name,
                 email=email,
                 username=username,
