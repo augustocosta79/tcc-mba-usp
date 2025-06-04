@@ -1,10 +1,10 @@
 import json
-from datetime import datetime
 
 import pytest
 from apps.users.repository import UserRepository
 from apps.users.schema import UserActivationSchema, UserPasswordSchema, UserUpdateSchema
 from apps.users.service import UserService
+from tests.utils import assert_has_valid_timestamps
 
 repository = UserRepository()
 service = UserService(repository=repository)
@@ -47,7 +47,8 @@ class TestCreateUser:
         assert body["username"] == payload["username"]
         assert "password" not in body
         assert "created_at" in body
-        assert "updated_at" in body
+        assert_has_valid_timestamps(body)
+
 
 
 @pytest.mark.django_db
@@ -65,10 +66,7 @@ class TestListUsers:
         assert created_user_data["name"] == user.name.value
         assert created_user_data["email"] == user.email.value
         assert "password" not in created_user_data
-        created_at_api = datetime.strptime(created_user_data["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        updated_at_api = datetime.strptime(created_user_data["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        assert created_at_api == user.created_at
-        assert updated_at_api == user.updated_at
+        assert_has_valid_timestamps(created_user_data)
 
 
 @pytest.mark.django_db
@@ -85,10 +83,7 @@ class TestGetUserById:
         assert body["email"] == user.email.value
         assert body["username"] == user.username
         assert body["is_active"] == user.is_active
-        created_at_api = datetime.strptime(body["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        assert created_at_api == user.created_at
-        assert updated_at_api == user.updated_at
+        assert_has_valid_timestamps(body)
 
 
 @pytest.mark.django_db
@@ -112,8 +107,7 @@ class TestUpdateUser:
         assert body["email"] == user.email.value
         assert body["username"] == user.username
         assert body["is_active"] == user.is_active
-        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        assert updated_at_api > user.updated_at
+        assert_has_valid_timestamps(body)
 
     def test_should_update_user_username(self, client, create_test_user):
         user = create_test_user
@@ -134,8 +128,7 @@ class TestUpdateUser:
         assert body["email"] == user.email.value
         assert body["username"] == new_username
         assert body["is_active"] == user.is_active
-        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        assert updated_at_api > user.updated_at
+        assert_has_valid_timestamps(body)
 
 
 @pytest.mark.django_db
@@ -159,8 +152,7 @@ class TestUserActivation:
         assert body["email"] == user.email.value
         assert body["username"] == user.username
         assert body["is_active"] is False
-        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        assert updated_at_api > user.updated_at
+        assert_has_valid_timestamps(body)
 
     def test_should_activate_user_successfully(self, client, create_test_user):
         user = create_test_user
@@ -183,8 +175,7 @@ class TestUserActivation:
         assert body["email"] == user.email.value
         assert body["username"] == user.username
         assert body["is_active"] is True
-        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        assert updated_at_api > user.updated_at
+        assert_has_valid_timestamps(body)
 
 
 @pytest.mark.django_db
