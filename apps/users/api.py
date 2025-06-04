@@ -42,6 +42,8 @@ def create_user(request, payload: UserCreateSchema):
             email=user.email.value,
             username=user.username,
             is_active=user.is_active,
+            created_at=user.created_at,
+            updated_at=user.updated_at
         )
     except ConflictError as e:
         raise HttpError(HTTPStatus.CONFLICT, str(e))
@@ -61,6 +63,8 @@ def list_users(request):
             email=user.email.value,
             username=user.username,
             is_active=user.is_active,
+            created_at=user.created_at,
+            updated_at=user.updated_at
         )
         for user in users
     ]
@@ -75,6 +79,8 @@ def get_user_by_id(request, user_id: UUID):
         email=user.email.value,
         username=user.username,
         is_active=user.is_active,
+        created_at=user.created_at,
+        updated_at=user.updated_at
     )
 
 
@@ -88,6 +94,8 @@ def update_user(request, user_id: UUID, payload: UserUpdateSchema):
         email=user.email.value,
         username=user.username,
         is_active=user.is_active,
+        created_at=user.created_at,
+        updated_at=user.updated_at
     )
 
 
@@ -101,6 +109,8 @@ def user_activation(request, user_id, payload: UserActivationSchema):
         email=deactivated_user.email.value,
         username=deactivated_user.username,
         is_active=deactivated_user.is_active,
+        created_at=deactivated_user.created_at,
+        updated_at=deactivated_user.updated_at
     )
 
 

@@ -1,11 +1,10 @@
-import pytest
-
 import json
+from datetime import datetime
 
-from apps.users.service import UserService
+import pytest
 from apps.users.repository import UserRepository
-from apps.users.schema import UserUpdateSchema, UserActivationSchema, UserPasswordSchema
-from apps.shared.value_objects import Email, Name, Password
+from apps.users.schema import UserActivationSchema, UserPasswordSchema, UserUpdateSchema
+from apps.users.service import UserService
 
 repository = UserRepository()
 service = UserService(repository=repository)
@@ -15,9 +14,12 @@ email = "test@email.com"
 password = "Abc@1234"
 username = "testeusername"
 
+
 @pytest.fixture
 def create_test_user():
-    user = service.create_user(name=name, email=email, password=password, username=username)
+    user = service.create_user(
+        name=name, email=email, password=password, username=username
+    )
 
     return user
 
@@ -29,13 +31,11 @@ class TestCreateUser:
             "name": "Augusto",
             "email": "test@email.com",
             "username": "augustocosta",
-            "password": "Abc@1234"
+            "password": "Abc@1234",
         }
 
         response = client.post(
-            "/api/users",
-            data=json.dumps(payload),
-            content_type="application/json"
+            "/api/users", data=json.dumps(payload), content_type="application/json"
         )
 
         assert response.status_code == 201
@@ -46,6 +46,9 @@ class TestCreateUser:
         assert body["email"] == payload["email"]
         assert body["username"] == payload["username"]
         assert "password" not in body
+        assert "created_at" in body
+        assert "updated_at" in body
+
 
 @pytest.mark.django_db
 class TestListUsers:
@@ -62,6 +65,11 @@ class TestListUsers:
         assert created_user_data["name"] == user.name.value
         assert created_user_data["email"] == user.email.value
         assert "password" not in created_user_data
+        created_at_api = datetime.strptime(created_user_data["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        updated_at_api = datetime.strptime(created_user_data["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        assert created_at_api == user.created_at
+        assert updated_at_api == user.updated_at
+
 
 @pytest.mark.django_db
 class TestGetUserById:
@@ -77,6 +85,11 @@ class TestGetUserById:
         assert body["email"] == user.email.value
         assert body["username"] == user.username
         assert body["is_active"] == user.is_active
+        created_at_api = datetime.strptime(body["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        assert created_at_api == user.created_at
+        assert updated_at_api == user.updated_at
+
 
 @pytest.mark.django_db
 class TestUpdateUser:
@@ -89,7 +102,7 @@ class TestUpdateUser:
         response = client.patch(
             f"/api/users/{user.id}",
             payload.model_dump(),
-            content_type="application/json"
+            content_type="application/json",
         )
         assert response.status_code == 200
 
@@ -99,6 +112,8 @@ class TestUpdateUser:
         assert body["email"] == user.email.value
         assert body["username"] == user.username
         assert body["is_active"] == user.is_active
+        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        assert updated_at_api > user.updated_at
 
     def test_should_update_user_username(self, client, create_test_user):
         user = create_test_user
@@ -109,7 +124,7 @@ class TestUpdateUser:
         response = client.patch(
             f"/api/users/{user.id}",
             payload.model_dump(),
-            content_type="application/json"
+            content_type="application/json",
         )
         assert response.status_code == 200
 
@@ -119,6 +134,9 @@ class TestUpdateUser:
         assert body["email"] == user.email.value
         assert body["username"] == new_username
         assert body["is_active"] == user.is_active
+        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        assert updated_at_api > user.updated_at
+
 
 @pytest.mark.django_db
 class TestUserActivation:
@@ -130,7 +148,7 @@ class TestUserActivation:
         response = client.patch(
             f"/api/users/{user.id}/activation",
             payload.model_dump(),
-            content_type="application/json"
+            content_type="application/json",
         )
         assert response.status_code == 200
 
@@ -141,6 +159,8 @@ class TestUserActivation:
         assert body["email"] == user.email.value
         assert body["username"] == user.username
         assert body["is_active"] is False
+        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        assert updated_at_api > user.updated_at
 
     def test_should_activate_user_successfully(self, client, create_test_user):
         user = create_test_user
@@ -152,7 +172,7 @@ class TestUserActivation:
         response = client.patch(
             f"/api/users/{user.id}/activation",
             payload.model_dump(),
-            content_type="application/json"
+            content_type="application/json",
         )
         assert response.status_code == 200
 
@@ -163,6 +183,9 @@ class TestUserActivation:
         assert body["email"] == user.email.value
         assert body["username"] == user.username
         assert body["is_active"] is True
+        updated_at_api = datetime.strptime(body["updated_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        assert updated_at_api > user.updated_at
+
 
 @pytest.mark.django_db
 class TestChangeUserPassword:
@@ -171,18 +194,21 @@ class TestChangeUserPassword:
 
         new_password = "abC@1234"
 
-        payload = UserPasswordSchema(current_password=password, new_password=new_password)
+        payload = UserPasswordSchema(
+            current_password=password, new_password=new_password
+        )
 
         response = client.patch(
             f"/api/users/{user.id}/password",
             payload.model_dump(),
-            content_type="application/json"
+            content_type="application/json",
         )
         assert response.status_code == 204
 
         updated_user = repository.get_user_by_id(user_id=user.id)
 
         assert updated_user.password.verify(new_password)
+
 
 @pytest.mark.django_db
 class TestDeleteUser:

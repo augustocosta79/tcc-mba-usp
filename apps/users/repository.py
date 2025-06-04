@@ -4,7 +4,6 @@ from apps.users.models import UserModel
 from apps.users.user_entity import User
 from apps.shared.value_objects import Name, Email, Password
 
-from django.core.exceptions import ObjectDoesNotExist
 
 class UserRepository(UserRepositoryInterface):
     def save(self, user: User) -> User:
@@ -23,7 +22,9 @@ class UserRepository(UserRepositoryInterface):
             email=Email(created_user_data.email),
             password=Password.from_hash(created_user_data.password),
             username=created_user_data.username,
-            is_active=created_user_data.is_active
+            is_active=created_user_data.is_active,
+            created_at=created_user_data.created_at,
+            updated_at=created_user_data.updated_at
         )
     
     def update_user(self, user: User) -> User:        
@@ -43,7 +44,9 @@ class UserRepository(UserRepositoryInterface):
             email=Email(user_model.email),
             password=Password.from_hash(user_model.password),
             username=user_model.username,
-            is_active=user_model.is_active
+            is_active=user_model.is_active,
+            created_at=user_model.created_at,
+            updated_at=user_model.updated_at
         )
     
     def get_user_by_id(self, user_id: UUID) -> User:
@@ -56,7 +59,9 @@ class UserRepository(UserRepositoryInterface):
             email=Email(user_data.email),
             password=Password.from_hash(user_data.password),
             username=user_data.username,
-            is_active=user_data.is_active
+            is_active=user_data.is_active,
+            created_at=user_data.created_at,
+            updated_at=user_data.updated_at
         )
     
     def list_users(self) -> list[User]:
@@ -68,7 +73,9 @@ class UserRepository(UserRepositoryInterface):
             email=Email(user_data.email),
             password=Password.from_hash(user_data.password),
             username=user_data.username,
-            is_active=user_data.is_active
+            is_active=user_data.is_active,
+            created_at=user_data.created_at,
+            updated_at=user_data.updated_at
             )
             for user_data in users_data
         ]
@@ -87,7 +94,9 @@ class UserRepository(UserRepositoryInterface):
                 email=Email(user_data.email),
                 password=Password.from_hash(user_data.password),
                 username=user_data.username,
-                is_active=user_data.is_active
+                is_active=user_data.is_active,
+                created_at=user_data.created_at,
+                updated_at=user_data.updated_at
             )
         except Exception:
             return None
