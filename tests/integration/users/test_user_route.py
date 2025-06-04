@@ -6,6 +6,8 @@ from apps.users.schema import UserActivationSchema, UserPasswordSchema, UserUpda
 from apps.users.service import UserService
 from tests.utils import assert_has_valid_timestamps
 
+from tests.utils.timed_client import TimedClient
+
 repository = UserRepository()
 service = UserService(repository=repository)
 
@@ -14,6 +16,10 @@ email = "test@email.com"
 password = "Abc@1234"
 username = "testeusername"
 
+
+@pytest.fixture
+def timed_client(client):
+    return TimedClient(client)
 
 @pytest.fixture
 def create_test_user():
@@ -26,7 +32,7 @@ def create_test_user():
 
 @pytest.mark.django_db
 class TestCreateUser:
-    def test_should_create_user_successfully(self, client):
+    def test_should_create_user_successfully(self, timed_client):
         payload = {
             "name": "Augusto",
             "email": "test@email.com",
@@ -34,7 +40,7 @@ class TestCreateUser:
             "password": "Abc@1234",
         }
 
-        response = client.post(
+        response = timed_client.post(
             "/api/users", data=json.dumps(payload), content_type="application/json"
         )
 
@@ -53,9 +59,9 @@ class TestCreateUser:
 
 @pytest.mark.django_db
 class TestListUsers:
-    def test_should_list_users_successfully(self, client, create_test_user):
+    def test_should_list_users_successfully(self, timed_client, create_test_user):
         user = create_test_user
-        response = client.get("/api/users")
+        response = timed_client.get("/api/users")
 
         assert response.status_code == 200
         body = response.json()
@@ -71,10 +77,10 @@ class TestListUsers:
 
 @pytest.mark.django_db
 class TestGetUserById:
-    def test_should_get_user_by_id_successfully(self, client, create_test_user):
+    def test_should_get_user_by_id_successfully(self, timed_client, create_test_user):
         user = create_test_user
 
-        response = client.get(f"/api/users/{user.id}")
+        response = timed_client.get(f"/api/users/{user.id}")
         assert response.status_code == 200
 
         body = response.json()
@@ -88,13 +94,13 @@ class TestGetUserById:
 
 @pytest.mark.django_db
 class TestUpdateUser:
-    def test_should_update_user_name(self, client, create_test_user):
+    def test_should_update_user_name(self, timed_client, create_test_user):
         user = create_test_user
 
         new_name = "New Test Name"
         payload = UserUpdateSchema(name=new_name)
 
-        response = client.patch(
+        response = timed_client.patch(
             f"/api/users/{user.id}",
             payload.model_dump(),
             content_type="application/json",
@@ -109,13 +115,13 @@ class TestUpdateUser:
         assert body["is_active"] == user.is_active
         assert_has_valid_timestamps(body)
 
-    def test_should_update_user_username(self, client, create_test_user):
+    def test_should_update_user_username(self, timed_client, create_test_user):
         user = create_test_user
 
         new_username = "New Test Username"
         payload = UserUpdateSchema(username=new_username)
 
-        response = client.patch(
+        response = timed_client.patch(
             f"/api/users/{user.id}",
             payload.model_dump(),
             content_type="application/json",
@@ -133,12 +139,12 @@ class TestUpdateUser:
 
 @pytest.mark.django_db
 class TestUserActivation:
-    def test_should_deactivate_user_successfully(self, client, create_test_user):
+    def test_should_deactivate_user_successfully(self, timed_client, create_test_user):
         user = create_test_user
 
         payload = UserActivationSchema(status=False)
 
-        response = client.patch(
+        response = timed_client.patch(
             f"/api/users/{user.id}/activation",
             payload.model_dump(),
             content_type="application/json",
@@ -154,14 +160,14 @@ class TestUserActivation:
         assert body["is_active"] is False
         assert_has_valid_timestamps(body)
 
-    def test_should_activate_user_successfully(self, client, create_test_user):
+    def test_should_activate_user_successfully(self, timed_client, create_test_user):
         user = create_test_user
         user.deactivate()
         repository.update_user(user=user)
 
         payload = UserActivationSchema(status=True)
 
-        response = client.patch(
+        response = timed_client.patch(
             f"/api/users/{user.id}/activation",
             payload.model_dump(),
             content_type="application/json",
@@ -180,7 +186,7 @@ class TestUserActivation:
 
 @pytest.mark.django_db
 class TestChangeUserPassword:
-    def test_should_change_user_password_successfully(self, client, create_test_user):
+    def test_should_change_user_password_successfully(self, timed_client, create_test_user):
         user = create_test_user
 
         new_password = "abC@1234"
@@ -189,7 +195,7 @@ class TestChangeUserPassword:
             current_password=password, new_password=new_password
         )
 
-        response = client.patch(
+        response = timed_client.patch(
             f"/api/users/{user.id}/password",
             payload.model_dump(),
             content_type="application/json",
@@ -203,9 +209,9 @@ class TestChangeUserPassword:
 
 @pytest.mark.django_db
 class TestDeleteUser:
-    def test_should_delete_user_successfully(self, client, create_test_user):
+    def test_should_delete_user_successfully(self, timed_client, create_test_user):
         user = create_test_user
 
-        response = client.delete(f"/api/users/{user.id}")
+        response = timed_client.delete(f"/api/users/{user.id}")
 
         assert response.status_code == 204

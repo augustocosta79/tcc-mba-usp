@@ -66,7 +66,6 @@ class UserService:
             user.activate()
         else:
             user.deactivate()
-            print("user deactivated")
         
         saved_user = self.repository.update_user(user=user)
         if not saved_user:

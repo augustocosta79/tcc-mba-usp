@@ -74,7 +74,6 @@ class TestProductService:
             owner_id=owner_id,
             category=category,
         )
-        print(product)
 
         assert isinstance(product, Product)
         assert isinstance(product.id, UUID)

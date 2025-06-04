@@ -1,8 +1,17 @@
-from uuid import UUID, uuid4
+import time
 from datetime import datetime
-from apps.products.service import ProductService
-from apps.products.repository import ProductRepository
+from uuid import UUID, uuid4
+
 import pytest
+from apps.products.repository import ProductRepository
+from apps.products.service import ProductService
+from tests.utils.timed_client import TimedClient
+
+
+@pytest.fixture
+def timed_client(client):
+    return TimedClient(client)
+
 
 @pytest.fixture
 def create_product_parameters():
@@ -23,25 +32,27 @@ def create_test_product(create_product_parameters):
     service = ProductService(repository)
 
     title, description, price, stock, owner_id, category = create_product_parameters
-    
-    product = service.create_product(title, description, price, stock, owner_id, category)
+
+    product = service.create_product(
+        title, description, price, stock, owner_id, category
+    )
 
     return product
 
 
 @pytest.mark.django_db
 class TestCreateProduct:
-    def test_should_create_product_successfully(self, client):
+    def test_should_create_product_successfully(self, timed_client):
         valid_payload = {
             "title": "valid Title",
             "description": "valid description",
             "price": "1.99",
             "stock": 3,
             "owner_id": str(uuid4()),
-            "category": "test"
+            "category": "test",
         }
 
-        response = client.post(
+        response = timed_client.post(
             "/api/products", valid_payload, content_type="application/json"
         )
         assert response.status_code == 201
@@ -67,11 +78,13 @@ class TestCreateProduct:
 
 @pytest.mark.django_db
 class TestGetProductbyId:
-    def test_should_get_product_by_id_successfully(self, client, create_test_product):
+    def test_should_get_product_by_id_successfully(
+        self, timed_client, create_test_product
+    ):
         existing_product = create_test_product
 
-        response = client.get(f"/api/products/{existing_product.id}")
-        
+        response = timed_client.get(f"/api/products/{existing_product.id}")
+
         assert response.status_code == 200
 
         retrived_product = response.json()
@@ -85,13 +98,15 @@ class TestGetProductbyId:
         assert retrived_product["category"] == existing_product.category
         assert retrived_product["is_active"] is existing_product.is_active
 
+
 @pytest.mark.django_db
 class TestGetProductByCategory:
-    def test_should_list_products_by_category_successfully(self, client, create_test_product):
+    def test_should_list_products_by_category_successfully(
+        self, timed_client, create_test_product
+    ):
         product = create_test_product
 
-        response = client.get("/api/products", {"category": product.category})
-        print(response.content)
+        response = timed_client.get("/api/products", {"category": product.category})
         assert response.status_code == 200
 
         products = response.json()
@@ -101,23 +116,30 @@ class TestGetProductByCategory:
         assert products[0]["id"] == str(product.id)
         assert products[0]["category"] == product.category
 
+
 @pytest.fixture
 def send_update_request():
-        def _send_update_request(client, product_id, payload):
-            response = client.patch(f"/api/products/{product_id}", payload, content_type="application/json")
-            assert response.status_code == 200
-            body = response.json()
+    def _send_update_request(timed_client, product_id, payload):
+        response = timed_client.patch(
+            f"/api/products/{product_id}", payload, content_type="application/json"
+        )
+        assert response.status_code == 200
+        body = response.json()
 
-            return body
-        return _send_update_request
+        return body
+
+    return _send_update_request
+
 
 @pytest.mark.django_db
 class TestUpdateProduct:
-    def test_should_update_product_data_successfully(self, client, create_test_product, send_update_request):
+    def test_should_update_product_data_successfully(
+        self, timed_client, create_test_product, send_update_request
+    ):
         product = create_test_product
 
-        title_payload = { "title": "changed title" }
-        body = send_update_request(client, product.id, title_payload)
+        title_payload = {"title": "changed title"}
+        body = send_update_request(timed_client, product.id, title_payload)
 
         assert body["id"] == str(product.id)
         assert body["title"] == title_payload["title"]
@@ -128,45 +150,53 @@ class TestUpdateProduct:
         assert body["category"] == product.category
         assert body["is_active"] is product.is_active
 
-        description_payload = { "description": "changed description" }
-        body = send_update_request(client, product.id, description_payload)
+        description_payload = {"description": "changed description"}
+        body = send_update_request(timed_client, product.id, description_payload)
         assert body["description"] == description_payload["description"]
-        
-        price_payload = { "price": "1.99" }
-        body = send_update_request(client, product.id, price_payload)
+
+        price_payload = {"price": "1.99"}
+        body = send_update_request(timed_client, product.id, price_payload)
         assert body["price"] == price_payload["price"]
-        
-        stock_payload = { "stock": 3 }
-        body = send_update_request(client, product.id, stock_payload)
+
+        stock_payload = {"stock": 3}
+        body = send_update_request(timed_client, product.id, stock_payload)
         assert body["stock"] == stock_payload["stock"]
-        
-        category_payload = { "category": f"{str(uuid4())}" }
-        body = send_update_request(client, product.id, category_payload)
+
+        category_payload = {"category": f"{str(uuid4())}"}
+        body = send_update_request(timed_client, product.id, category_payload)
         assert body["category"] == category_payload["category"]
 
 
 @pytest.mark.django_db
 class TestProductActivation:
-    def test_should_activate_product_successfully(self, client, create_test_product):
+    def test_should_activate_product_successfully(
+        self, timed_client, create_test_product
+    ):
         product = create_test_product
-        activation_payload = { "status": True }
+        activation_payload = {"status": True}
 
-        activation_response = client.patch(f"/api/products/{product.id}/activation", activation_payload, content_type="application/json")
+        activation_response = timed_client.patch(
+            f"/api/products/{product.id}/activation",
+            activation_payload,
+            content_type="application/json",
+        )
         assert activation_response.status_code == 200
 
         activation_body = activation_response.json()
 
         assert activation_body["id"] == str(product.id)
         assert activation_body["is_active"] is True
-        
-        deactivation_payload = { "status": False }
 
-        deactivation_response = client.patch(f"/api/products/{product.id}/activation", deactivation_payload, content_type="application/json")
+        deactivation_payload = {"status": False}
+
+        deactivation_response = timed_client.patch(
+            f"/api/products/{product.id}/activation",
+            deactivation_payload,
+            content_type="application/json",
+        )
         assert deactivation_response.status_code == 200
 
         deactivation_body = deactivation_response.json()
 
         assert deactivation_body["id"] == str(product.id)
         assert deactivation_body["is_active"] is False
-
-
