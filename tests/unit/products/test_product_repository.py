@@ -1,10 +1,11 @@
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
-from apps.shared.value_objects import Title, Description, Price, Stock
+
+import pytest
 from apps.products.product_entity import Product
 from apps.products.repository import ProductRepository
-import pytest
+from apps.shared.value_objects import Description, Price, Stock, Title
 
 
 @pytest.fixture
@@ -25,14 +26,7 @@ def create_product_and_repository():
 
     category = "test"
 
-    product = Product(
-        title,
-        description,
-        price,
-        stock,
-        owner_id,
-        category
-    )
+    product = Product(title, description, price, stock, owner_id, category)
 
     repository = ProductRepository()
 
@@ -84,13 +78,15 @@ class TestProductRepository:
         assert len(products) == 1
         assert products[0].id == saved_product.id
 
-    def test_should_update_persisted_product_data_successfully(self, create_product_and_repository):
+    def test_should_update_persisted_product_data_successfully(
+        self, create_product_and_repository
+    ):
         test_product, repository = create_product_and_repository
         product = repository.save(test_product)
 
         new_title = "changed title"
         product.change_title(new_title)
-        updated_product = repository.update_product(product)        
+        updated_product = repository.update_product(product)
         assert isinstance(updated_product, Product)
         assert updated_product.title == Title(new_title)
         assert updated_product.title.text == new_title
@@ -128,14 +124,8 @@ class TestProductRepository:
         updated_product = repository.update_product(product)
         assert updated_product.is_active is False
         assert updated_product.updated_at > product.updated_at
-        
+
         product.activate()
         updated_product = repository.update_product(product)
         assert updated_product.is_active is True
         assert updated_product.updated_at > product.updated_at
-
-
-
-
-
-
