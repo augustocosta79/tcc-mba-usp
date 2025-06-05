@@ -1,4 +1,3 @@
-import traceback
 from http import HTTPStatus
 from uuid import UUID
 
@@ -11,7 +10,6 @@ from apps.products.schema import (
 )
 from apps.products.service import ProductService
 from apps.shared.exceptions import NotFoundError
-from apps.shared.value_objects import Description, Price, Stock, Title
 from ninja import Router
 from ninja.errors import HttpError
 from utils.error_schema import ErrorSchema
@@ -54,7 +52,6 @@ def create_product(request, payload: ProductCreateSchema):
             updated_at=created_product.updated_at,
         )
     except Exception as exc:
-        traceback.print_exc()
         raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 
@@ -79,6 +76,8 @@ def get_product_by_id(request, product_id: UUID):
         )
     except NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
+    except Exception as exc:
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 
 @products_router.get(
@@ -86,23 +85,25 @@ def get_product_by_id(request, product_id: UUID):
     response={HTTPStatus.OK: List[ProductSchema]},
 )
 def list_products_by_category(request, category: str):
-    products = service.list_products_by_category(category)
-    return [
-        ProductSchema(
-            id=product.id,
-            title=product.title.text,
-            description=product.description.text,
-            price=str(product.price.value),
-            stock=product.stock.value,
-            owner_id=product.owner_id,
-            category=product.category,
-            is_active=product.is_active,
-            created_at=product.created_at,
-            updated_at=product.updated_at,
-        )
-        for product in products
-    ]
-
+    try:
+        products = service.list_products_by_category(category)
+        return [
+            ProductSchema(
+                id=product.id,
+                title=product.title.text,
+                description=product.description.text,
+                price=str(product.price.value),
+                stock=product.stock.value,
+                owner_id=product.owner_id,
+                category=product.category,
+                is_active=product.is_active,
+                created_at=product.created_at,
+                updated_at=product.updated_at,
+            )
+            for product in products
+        ]
+    except Exception as exc:
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 @products_router.patch(
     "/{product_id}",
