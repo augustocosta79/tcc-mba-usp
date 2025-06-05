@@ -217,3 +217,13 @@ class TestProductService:
         with pytest.raises(NotFoundError) as exc:
             service.product_activation(uuid4(), activate_payload)
         assert "not found" in str(exc)
+
+    def test_should_delete_product_successfully(self, mock_repository_and_service):
+        mock_repository, service = mock_repository_and_service
+        mock_product = MagicMock()
+        mock_repository.get_product_by_id.return_value = mock_product
+
+        service.delete_product(mock_product.id)
+
+        mock_repository.get_product_by_id.assert_called_once_with(mock_product.id)
+        mock_repository.delete_product.assert_called_once_with(mock_product)

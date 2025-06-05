@@ -7,6 +7,8 @@ from apps.products.product_entity import Product
 from apps.products.repository import ProductRepository
 from apps.shared.value_objects import Description, Price, Stock, Title
 
+from apps.shared.exceptions import NotFoundError
+
 
 @pytest.fixture
 def create_product_and_repository():
@@ -129,3 +131,9 @@ class TestProductRepository:
         updated_product = repository.update_product(product)
         assert updated_product.is_active is True
         assert updated_product.updated_at > product.updated_at
+
+    def test_should_delete_product_successfully(self, create_product_and_repository):
+        product, repository = create_product_and_repository
+        repository.delete_product(product)
+
+        assert repository.get_product_by_id(product.id) is None

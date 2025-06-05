@@ -25,34 +25,30 @@ service = ProductService(repository)
     "",
     response={
         HTTPStatus.CREATED: ProductSchema,
-        HTTPStatus.INTERNAL_SERVER_ERROR: ErrorSchema,
     },
 )
 def create_product(request, payload: ProductCreateSchema):
-    try:
-        created_product = service.create_product(
-            payload.title,
-            payload.description,
-            payload.price,
-            payload.stock,
-            payload.owner_id,
-            payload.category,
-        )
+    created_product = service.create_product(
+        payload.title,
+        payload.description,
+        payload.price,
+        payload.stock,
+        payload.owner_id,
+        payload.category,
+    )
 
-        return HTTPStatus.CREATED, ProductSchema(
-            id=created_product.id,
-            title=created_product.title.text,
-            description=created_product.description.text,
-            price=str(created_product.price.value),
-            stock=created_product.stock.value,
-            owner_id=created_product.owner_id,
-            category=created_product.category,
-            is_active=created_product.is_active,
-            created_at=created_product.created_at,
-            updated_at=created_product.updated_at,
-        )
-    except Exception as exc:
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    return HTTPStatus.CREATED, ProductSchema(
+        id=created_product.id,
+        title=created_product.title.text,
+        description=created_product.description.text,
+        price=str(created_product.price.value),
+        stock=created_product.stock.value,
+        owner_id=created_product.owner_id,
+        category=created_product.category,
+        is_active=created_product.is_active,
+        created_at=created_product.created_at,
+        updated_at=created_product.updated_at,
+    )
 
 
 @products_router.get(
@@ -76,8 +72,6 @@ def get_product_by_id(request, product_id: UUID):
         )
     except NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
-    except Exception as exc:
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 
 @products_router.get(
@@ -85,25 +79,23 @@ def get_product_by_id(request, product_id: UUID):
     response={HTTPStatus.OK: List[ProductSchema]},
 )
 def list_products_by_category(request, category: str):
-    try:
-        products = service.list_products_by_category(category)
-        return [
-            ProductSchema(
-                id=product.id,
-                title=product.title.text,
-                description=product.description.text,
-                price=str(product.price.value),
-                stock=product.stock.value,
-                owner_id=product.owner_id,
-                category=product.category,
-                is_active=product.is_active,
-                created_at=product.created_at,
-                updated_at=product.updated_at,
-            )
-            for product in products
-        ]
-    except Exception as exc:
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    products = service.list_products_by_category(category)
+    return [
+        ProductSchema(
+            id=product.id,
+            title=product.title.text,
+            description=product.description.text,
+            price=str(product.price.value),
+            stock=product.stock.value,
+            owner_id=product.owner_id,
+            category=product.category,
+            is_active=product.is_active,
+            created_at=product.created_at,
+            updated_at=product.updated_at,
+        )
+        for product in products
+    ]
+
 
 @products_router.patch(
     "/{product_id}",
@@ -128,8 +120,6 @@ def update_product(request, product_id: UUID, payload: ProductUpdateSchema):
         )
     except NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
-    except Exception as exc:
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 
 @products_router.patch(
@@ -137,7 +127,6 @@ def update_product(request, product_id: UUID, payload: ProductUpdateSchema):
     response={
         HTTPStatus.OK: ProductSchema,
         HTTPStatus.NOT_FOUND: ErrorSchema,
-        HTTPStatus.INTERNAL_SERVER_ERROR: ErrorSchema,
     },
 )
 def product_activation(request, product_id: UUID, payload: ProductActivationSchema):
@@ -157,6 +146,18 @@ def product_activation(request, product_id: UUID, payload: ProductActivationSche
         )
     except NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
-    except Exception as exc:
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
-    
+
+
+@products_router.delete(
+    "/{product_id}",
+    response={
+        HTTPStatus.NO_CONTENT: None,
+        HTTPStatus.NOT_FOUND: ErrorSchema,
+    },
+)
+def delete_product(request, product_id: UUID):
+    try:
+        service.delete_product(product_id)
+        return HTTPStatus.NO_CONTENT, None
+    except NotFoundError as exc:
+        raise HttpError(HTTPStatus.NOT_FOUND, str(exc))

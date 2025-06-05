@@ -31,7 +31,8 @@ class ProductRepository(ProductRepositoryInterface):
         )
     
     def get_product_by_id(self, product_id: UUID):
-        product_data = ProductModel.objects.filter(id=product_id).first()
+        if not (product_data:=ProductModel.objects.filter(id=product_id).first()):
+            return None
         return Product(
             id=product_data.id,
             title=Title(product_data.title),
@@ -90,3 +91,8 @@ class ProductRepository(ProductRepositoryInterface):
                 created_at=product_data.created_at,
                 updated_at=product_data.updated_at
             )
+    
+    def delete_product(self, product: Product) -> None:
+        if not (product_data := ProductModel.objects.filter(id=product.id).first()):
+            return None        
+        product_data.delete()

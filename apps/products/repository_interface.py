@@ -16,3 +16,7 @@ class ProductRepositoryInterface(ABC):
     @abstractmethod
     def update_product(self):
         pass
+
+    @abstractmethod
+    def delete_product(self):
+        pass

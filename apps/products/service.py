@@ -66,7 +66,7 @@ class ProductService:
 
         return updated_product
     
-    def product_activation(self, product_id: UUID, payload: ProductActivationSchema):
+    def product_activation(self, product_id: UUID, payload: ProductActivationSchema) -> Product:
         product = self.repository.get_product_by_id(product_id)
 
         if not product:
@@ -78,3 +78,8 @@ class ProductService:
             product.deactivate()
 
         return self.repository.update_product(product)
+    
+    def delete_product(self, product_id: UUID) -> None:
+        if not (product:=self.repository.get_product_by_id(product_id)):
+            raise NotFoundError(f"Product with id {product_id} not found")
+        self.repository.delete_product(product)

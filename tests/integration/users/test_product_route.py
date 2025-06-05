@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -6,6 +5,8 @@ import pytest
 from apps.products.repository import ProductRepository
 from apps.products.service import ProductService
 from tests.utils.timed_client import TimedClient
+
+from tests.utils.assertions import assert_has_valid_timestamps
 
 
 @pytest.fixture
@@ -69,11 +70,7 @@ class TestCreateProduct:
         assert body["category"] == valid_payload["category"]
         assert "created_at" in body
         assert "updated_at" in body
-        created_at = body["created_at"]
-        updated_at = body["updated_at"]
-        date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-        assert isinstance(datetime.strptime(created_at, date_format), datetime)
-        assert isinstance(datetime.strptime(updated_at, date_format), datetime)
+        assert_has_valid_timestamps(body)
 
 
 @pytest.mark.django_db
@@ -87,16 +84,17 @@ class TestGetProductbyId:
 
         assert response.status_code == 200
 
-        retrived_product = response.json()
+        body = response.json()
 
-        assert retrived_product["id"] == str(existing_product.id)
-        assert retrived_product["title"] == existing_product.title.text
-        assert retrived_product["description"] == existing_product.description.text
-        assert retrived_product["price"] == str(existing_product.price.value)
-        assert retrived_product["stock"] == existing_product.stock.value
-        assert retrived_product["owner_id"] == str(existing_product.owner_id)
-        assert retrived_product["category"] == existing_product.category
-        assert retrived_product["is_active"] is existing_product.is_active
+        assert body["id"] == str(existing_product.id)
+        assert body["title"] == existing_product.title.text
+        assert body["description"] == existing_product.description.text
+        assert body["price"] == str(existing_product.price.value)
+        assert body["stock"] == existing_product.stock.value
+        assert body["owner_id"] == str(existing_product.owner_id)
+        assert body["category"] == existing_product.category
+        assert body["is_active"] is existing_product.is_active
+        assert_has_valid_timestamps(body)
 
 
 @pytest.mark.django_db
@@ -109,12 +107,13 @@ class TestGetProductByCategory:
         response = timed_client.get("/api/products", {"category": product.category})
         assert response.status_code == 200
 
-        products = response.json()
+        body = response.json()
 
-        assert isinstance(products, list)
-        assert len(products) == 1
-        assert products[0]["id"] == str(product.id)
-        assert products[0]["category"] == product.category
+        assert isinstance(body, list)
+        assert len(body) == 1
+        assert body[0]["id"] == str(product.id)
+        assert body[0]["category"] == product.category
+        assert_has_valid_timestamps(body[0])
 
 
 @pytest.fixture
@@ -149,6 +148,7 @@ class TestUpdateProduct:
         assert body["owner_id"] == str(product.owner_id)
         assert body["category"] == product.category
         assert body["is_active"] is product.is_active
+        assert_has_valid_timestamps(body)
 
         description_payload = {"description": "changed description"}
         body = send_update_request(timed_client, product.id, description_payload)
@@ -173,8 +173,8 @@ class TestProductActivation:
         self, timed_client, create_test_product
     ):
         product = create_test_product
-        activation_payload = {"status": True}
 
+        activation_payload = { "status": True }
         activation_response = timed_client.patch(
             f"/api/products/{product.id}/activation",
             activation_payload,
@@ -183,12 +183,11 @@ class TestProductActivation:
         assert activation_response.status_code == 200
 
         activation_body = activation_response.json()
-
         assert activation_body["id"] == str(product.id)
         assert activation_body["is_active"] is True
+        assert_has_valid_timestamps(activation_body)
 
-        deactivation_payload = {"status": False}
-
+        deactivation_payload = { "status": False }
         deactivation_response = timed_client.patch(
             f"/api/products/{product.id}/activation",
             deactivation_payload,
@@ -197,6 +196,20 @@ class TestProductActivation:
         assert deactivation_response.status_code == 200
 
         deactivation_body = deactivation_response.json()
-
         assert deactivation_body["id"] == str(product.id)
         assert deactivation_body["is_active"] is False
+        assert_has_valid_timestamps(deactivation_body)
+
+@pytest.mark.django_db
+class TestDeleteProduct:
+    def test_should_delete_product_successfully(self, create_test_product, timed_client):
+        product = create_test_product
+
+        response = timed_client.delete(f"/api/products/{product.id}")
+
+        assert response.status_code == 204
+
+    def test_should_get_404_response_for_invalid_product_id(self, timed_client):
+        response = timed_client.delete(f"/api/products/{uuid4()}")
+
+        assert response.status_code == 404
