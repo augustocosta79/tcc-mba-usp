@@ -1,13 +1,17 @@
-from apps.products.repository_interface import ProductRepositoryInterface
-from apps.products.product_entity import Product
-from apps.products.schema import ProductUpdateSchema, ProductActivationSchema
-from apps.shared.value_objects import Title, Description, Price, Stock
-from apps.shared.exceptions import NotFoundError
+import logging
 from uuid import UUID
 
+from apps.products.product_entity import Product
+from apps.products.repository_interface import ProductRepositoryInterface
+from apps.products.schema import ProductActivationSchema, ProductUpdateSchema
+from apps.shared.exceptions import NotFoundError
+from apps.shared.value_objects import Description, Price, Stock, Title
+
+
 class ProductService:
-    def __init__(self, repository:ProductRepositoryInterface):
+    def __init__(self, repository:ProductRepositoryInterface, logger: logging.Logger):
         self.repository = repository
+        self.logger = logger
 
     def create_product(
             self,
