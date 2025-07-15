@@ -5,11 +5,12 @@ from apps.users.repository import UserRepository
 from apps.users.schema import UserActivationSchema, UserPasswordSchema, UserUpdateSchema
 from apps.users.service import UserService
 from tests.utils import assert_has_valid_timestamps
-
 from tests.utils.timed_client import TimedClient
+from utils.logger import configure_logger
 
 repository = UserRepository()
-service = UserService(repository=repository)
+logger = configure_logger(__name__)
+service = UserService(repository=repository, logger=logger)
 
 name = "Test"
 email = "test@email.com"

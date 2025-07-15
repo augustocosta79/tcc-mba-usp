@@ -15,3 +15,14 @@ def configure_logger(name: str) -> logging.Logger:
         logger.addHandler(handler)
 
     return logger
+
+
+if __name__ == "__main__":
+    logger = configure_logger("test_logger")
+    
+    logger.debug("Mensagem de DEBUG")
+    logger.info("Mensagem de INFO")
+    logger.warning("Mensagem de WARNING")
+    logger.error("Mensagem de ERROR")
+    logger.critical("Mensagem de CRITICAL")
+

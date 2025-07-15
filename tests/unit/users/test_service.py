@@ -15,7 +15,8 @@ from apps.shared.exceptions import UnauthorizedError, ConflictError, NotFoundErr
 class TestUserService:
     def test_should_create_user_with_valid_data(self):
         mock_repository = MagicMock()
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         email_string = "amcneto@hotmail.com"
         email=Email(email_string)
@@ -53,7 +54,8 @@ class TestUserService:
 
     def test_should_raise_conflict_error_for_duplicated_email(self):
         mock_repository = MagicMock()
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         name=Name("Augusto")
         email=Email("amcneto@hotmail.com")
@@ -63,18 +65,20 @@ class TestUserService:
 
         mock_repository.get_user_by_email.return_value = email.value
         
-        with pytest.raises(ConflictError):
+        with pytest.raises(ConflictError) as exc:
             service.create_user(
                 name=name,
                 email=email,
                 username=username,
                 password=password
             )
+        assert "e-mail is already in use" in str(exc)
 
     
     def test_should_get_user_by_id(self):
         mock_repository = MagicMock()
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         name = Name("Test")
         email = Email("test@email.com")
@@ -99,17 +103,20 @@ class TestUserService:
 
     def test_should_raise_not_found_error_for_wrong_user_id(self):
         mock_repository = MagicMock()
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
         random_id = uuid4()
         mock_repository.get_user_by_id.return_value = None
 
-        with pytest.raises(NotFoundError):
+        with pytest.raises(NotFoundError) as exc:
             service.get_user_by_id(user_id=random_id)
+        assert "User not found" in str(exc)
 
     
     def test_should_get_users_list(self):
         mock_repository = MagicMock()
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         name1 = Name("TestOne")
         email1 = Email("test1@email.com")
@@ -141,7 +148,8 @@ class TestUserService:
         mock_repository = MagicMock()
         fake_id = "any-fake-id"
         payload = UserUpdateSchema(name="New Name")
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         mock_repository.get_user_by_id.return_value = mock_user
 
@@ -152,17 +160,17 @@ class TestUserService:
         mock_repository.update_user.assert_called_once_with(mock_user)
 
     def test_should_raise_not_found_error_to_update_not_found_user(self):
-        mock_user = MagicMock()
         mock_repository = MagicMock()
         fake_id = "any-fake-id"
         payload = UserUpdateSchema(name="New Name")
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
-        mock_repository.get_user_by_id.return_value = mock_user
-        mock_repository.update_user.return_value = None
+        mock_repository.get_user_by_id.return_value = None
 
-        with pytest.raises(NotFoundError):
+        with pytest.raises(NotFoundError) as exc:
             service.update_user(user_id=fake_id, payload=payload)
+        assert "User not found" in str(exc)
 
     def test_should_change_user_password(self):
         mock_repository = MagicMock()
@@ -173,32 +181,34 @@ class TestUserService:
 
         fake_id = "id-for-test"
 
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         mock_repository.get_user_by_id.return_value = mock_user
 
         service.change_user_password(user_id=fake_id, current_raw_password=current_raw_password, new_raw_password=new_raw_password)
 
-        mock_repository.get_user_by_id.assert_called_once_with(user_id=fake_id)
+        mock_repository.get_user_by_id.assert_called_once_with(fake_id)
         mock_user.change_password.assert_called_once_with(current_raw_password, new_raw_password)
         mock_repository.update_user.assert_called_once_with(mock_user)
 
     def test_should_raise_error_on_change_user_with_wrong_password(self):
-        mock_repository = MagicMock()
-        
+        mock_repository = MagicMock()        
         mock_user = MagicMock()
-        mock_user.password.verify.return_value = False
 
         current_raw_password = "Abc@1234"
         new_raw_password = "Abc@2345"
 
         fake_id = "id-for-test"
 
-        service = UserService(repository=mock_repository)
-        service.get_user_by_id = MagicMock(return_value=mock_user)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
+        mock_repository.get_user_by_id.return_value = mock_user
+        mock_user.password.verify.return_value = False
 
-        with pytest.raises(UnauthorizedError):
+        with pytest.raises(UnauthorizedError) as exc:
             service.change_user_password(user_id=fake_id, current_raw_password=current_raw_password, new_raw_password=new_raw_password)
+        assert "wrong current password" in str(exc)
 
         
 
@@ -207,7 +217,8 @@ class TestUserService:
         mock_repository = MagicMock()
         fake_id = "any-fake-id"
         payload = UserActivationSchema(status=False)
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         mock_repository.get_user_by_id.return_value = mock_user
 
@@ -223,7 +234,8 @@ class TestUserService:
         mock_repository = MagicMock()
         fake_id = "any-fake-id"
         payload = UserActivationSchema(status=True)
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         mock_repository.get_user_by_id.return_value = mock_user
 
@@ -239,20 +251,23 @@ class TestUserService:
         mock_repository = MagicMock()
         fake_id = "any-fake-id"
         payload = UserActivationSchema(status=True)
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
-        mock_repository.update_user.return_value = None
+        mock_repository.get_user_by_id.return_value = None
         service.get_user_by_id = MagicMock(return_value=mock_user)
 
-        with pytest.raises(NotFoundError):
+        with pytest.raises(NotFoundError) as exc:
             service.user_activation(user_id=fake_id, payload=payload)
+        assert "User not found" in str(exc)
 
     def test_should_delete_user(self):
         mock_repository = MagicMock()
         mock_user = MagicMock()
         fake_id = "any-fake-id"
 
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         mock_repository.get_user_by_id.return_value = mock_user
         service.delete_user(user_id=fake_id)
@@ -266,7 +281,8 @@ class TestUserService:
         mock_repository.get_user_by_email.return_value = mock_user
 
         
-        service = UserService(repository=mock_repository)
+        mock_logger = MagicMock()
+        service = UserService(repository=mock_repository, logger=mock_logger)
 
         email=Email("amcneto@hotmail.com")
         username="amcneto"
@@ -275,10 +291,11 @@ class TestUserService:
         password=Password(raw_password)
         
 
-        with pytest.raises(ConflictError):
+        with pytest.raises(ConflictError) as exc:
             service.create_user(
             name=name,
             email=email,
             username=username,
             password=password
         )
+        assert "e-mail is already in use" in str(exc)
