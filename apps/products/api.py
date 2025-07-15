@@ -1,4 +1,5 @@
 from http import HTTPStatus
+import traceback
 from uuid import UUID
 
 from apps.products.repository import ProductRepository
@@ -15,10 +16,13 @@ from ninja.errors import HttpError
 from utils.error_schema import ErrorSchema
 from typing import List
 
+from utils.logger import configure_logger
+
 products_router = Router()
 
 repository = ProductRepository()
-service = ProductService(repository)
+logger = configure_logger(__name__)
+service = ProductService(repository, logger)
 
 
 @products_router.post(
@@ -28,27 +32,32 @@ service = ProductService(repository)
     },
 )
 def create_product(request, payload: ProductCreateSchema):
-    created_product = service.create_product(
-        payload.title,
-        payload.description,
-        payload.price,
-        payload.stock,
-        payload.owner_id,
-        payload.category,
-    )
+    try:
+        created_product = service.create_product(
+            payload.title,
+            payload.description,
+            payload.price,
+            payload.stock,
+            payload.owner_id,
+            payload.category,
+        )
 
-    return HTTPStatus.CREATED, ProductSchema(
-        id=created_product.id,
-        title=created_product.title.text,
-        description=created_product.description.text,
-        price=str(created_product.price.value),
-        stock=created_product.stock.value,
-        owner_id=created_product.owner_id,
-        category=created_product.category,
-        is_active=created_product.is_active,
-        created_at=created_product.created_at,
-        updated_at=created_product.updated_at,
-    )
+        return HTTPStatus.CREATED, ProductSchema(
+            id=created_product.id,
+            title=created_product.title.text,
+            description=created_product.description.text,
+            price=str(created_product.price.value),
+            stock=created_product.stock.value,
+            owner_id=created_product.owner_id,
+            category=created_product.category,
+            is_active=created_product.is_active,
+            created_at=created_product.created_at,
+            updated_at=created_product.updated_at,
+        )
+    except Exception as exc:
+        logger.error(f"Unexpected error on POST /products: {str(exc)}")
+        traceback.print_exc()
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 
 @products_router.get(
@@ -71,7 +80,12 @@ def get_product_by_id(request, product_id: UUID):
             updated_at=product.updated_at,
         )
     except NotFoundError as exc:
+        traceback.print_exc()
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
+    except Exception as exc:
+        logger.error(f"Unexpected error on POST /products: {str(exc)}")
+        traceback.print_exc()
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 
 @products_router.get(
@@ -79,22 +93,27 @@ def get_product_by_id(request, product_id: UUID):
     response={HTTPStatus.OK: List[ProductSchema]},
 )
 def list_products_by_category(request, category: str):
-    products = service.list_products_by_category(category)
-    return [
-        ProductSchema(
-            id=product.id,
-            title=product.title.text,
-            description=product.description.text,
-            price=str(product.price.value),
-            stock=product.stock.value,
-            owner_id=product.owner_id,
-            category=product.category,
-            is_active=product.is_active,
-            created_at=product.created_at,
-            updated_at=product.updated_at,
-        )
-        for product in products
-    ]
+    try:
+        products = service.list_products_by_category(category)
+        return [
+            ProductSchema(
+                id=product.id,
+                title=product.title.text,
+                description=product.description.text,
+                price=str(product.price.value),
+                stock=product.stock.value,
+                owner_id=product.owner_id,
+                category=product.category,
+                is_active=product.is_active,
+                created_at=product.created_at,
+                updated_at=product.updated_at,
+            )
+            for product in products
+        ]
+    except Exception as exc:
+        logger.error(f"Unexpected error on GET /products/{category}: {str(exc)}")
+        traceback.print_exc()
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 
 @products_router.patch(
@@ -120,6 +139,10 @@ def update_product(request, product_id: UUID, payload: ProductUpdateSchema):
         )
     except NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
+    except Exception as exc:
+        logger.error(f"Unexpected error on PATCH /products/{product_id}: {str(exc)}")
+        traceback.print_exc()
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 
 @products_router.patch(
@@ -146,6 +169,10 @@ def product_activation(request, product_id: UUID, payload: ProductActivationSche
         )
     except NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
+    except Exception as exc:
+        logger.error(f"Unexpected error on PATCH /products/{product_id}/activation: {str(exc)}")
+        traceback.print_exc()
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
 
 @products_router.delete(
@@ -161,3 +188,7 @@ def delete_product(request, product_id: UUID):
         return HTTPStatus.NO_CONTENT, None
     except NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc))
+    except Exception as exc:
+        logger.error(f"Unexpected error on DELETE /products/{product_id}: {str(exc)}")
+        traceback.print_exc()
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))

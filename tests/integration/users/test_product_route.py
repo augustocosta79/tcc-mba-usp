@@ -8,6 +8,8 @@ from tests.utils.timed_client import TimedClient
 
 from tests.utils.assertions import assert_has_valid_timestamps
 
+from utils.logger import configure_logger
+
 
 @pytest.fixture
 def timed_client(client):
@@ -30,7 +32,8 @@ def create_product_parameters():
 @pytest.fixture
 def create_test_product(create_product_parameters):
     repository = ProductRepository()
-    service = ProductService(repository)
+    logger = configure_logger(__name__)
+    service = ProductService(repository, logger)
 
     title, description, price, stock, owner_id, category = create_product_parameters
 

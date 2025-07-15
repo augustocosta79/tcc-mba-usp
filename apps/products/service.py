@@ -40,7 +40,7 @@ class ProductService:
         )
 
         saved_product = self.repository.save(product)
-
+        self.logger.info(f"Product successfully created: id {saved_product.id} - name {saved_product.title}")
         return saved_product
     
     def get_product_by_id(self, product_id) -> Product:
@@ -53,7 +53,8 @@ class ProductService:
     
     def update_product(self, product_id: UUID, payload: ProductUpdateSchema) -> Product:        
         if not (product := self.repository.get_product_by_id(product_id)):
-            raise NotFoundError(f"Product with id {product_id} not found")
+            self.logger.warning(f"Can't update Product with id {product_id}. Product not found")
+            raise NotFoundError(f"Can't update Product with id {product_id}. Product not found")
         
         operations = {
             "title": product.change_title,
@@ -67,23 +68,28 @@ class ProductService:
             operations[attr](value)
 
         updated_product = self.repository.update_product(product)
-
+        self.logger.info(f"Product successfully updated: id {updated_product.id} - name {updated_product.title}")
         return updated_product
     
     def product_activation(self, product_id: UUID, payload: ProductActivationSchema) -> Product:
         product = self.repository.get_product_by_id(product_id)
 
         if not product:
+            self.logger.warning(f"Product not found. ID: {product_id}")
             raise NotFoundError(f"Product with id {product_id} not found")
         
         if payload.status is True:
+            self.logger.info(f"Product id {product.id} activated successfully")
             product.activate()
         else:
+            self.logger.info(f"Product id {product.id} deactivated successfully")
             product.deactivate()
 
         return self.repository.update_product(product)
     
     def delete_product(self, product_id: UUID) -> None:
         if not (product:=self.repository.get_product_by_id(product_id)):
+            self.logger.warning(f"Not found Product - ID {product_id}")
             raise NotFoundError(f"Product with id {product_id} not found")
+        self.logger.info("Product successfully deleted")
         self.repository.delete_product(product)

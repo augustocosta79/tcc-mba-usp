@@ -43,7 +43,8 @@ def test_product(product_args):
 @pytest.fixture
 def mock_repository_and_service():
     mock_repository = MagicMock()
-    service = ProductService(mock_repository)
+    mock_logger = MagicMock()
+    service = ProductService(mock_repository, mock_logger)
     return mock_repository, service
 
 
