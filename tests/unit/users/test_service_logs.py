@@ -16,7 +16,7 @@ def get_resources():
 
     return repository_mock, logger_mock, service
 
-class TestServiceLogs:
+class TestUserServiceLogs:
     def test_should_log_user_creation_successfully(self):
         repository_mock = MagicMock()
         logger_mock = MagicMock()

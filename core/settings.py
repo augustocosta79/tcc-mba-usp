@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     "apps.authentication",
     "apps.users",
     "apps.healthz",
-    "apps.products"
+    "apps.products",
+    "apps.categories"
 ]
 
 MIDDLEWARE = [
