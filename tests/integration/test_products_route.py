@@ -6,7 +6,7 @@ from apps.products.repository import ProductRepository
 from apps.products.service import ProductService
 from tests.utils.timed_client import TimedClient
 
-from tests.utils.assertions import assert_has_valid_timestamps
+from tests.utils.assertions import assert_has_valid_id, assert_has_valid_timestamps
 
 from utils.logger import configure_logger
 
@@ -63,8 +63,7 @@ class TestCreateProduct:
 
         body = response.json()
 
-        assert "id" in body
-        assert isinstance(UUID(body["id"]), UUID)
+        assert_has_valid_id(body)
         assert body["title"] == valid_payload["title"]
         assert body["description"] == valid_payload["description"]
         assert body["price"] == valid_payload["price"]
