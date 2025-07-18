@@ -51,3 +51,14 @@ class TestCategoryRepository:
         retrieved_category = repository.get_category_by_id(saved_category.id)
         assert_is_equal(retrieved_category, saved_category)
         assert_is_equal(retrieved_category, category)
+
+    def test_should_update_category_successfully(self, category_and_saved_category):
+        category, saved_category = category_and_saved_category
+        saved_category.rename("new name")
+        saved_category.update_description("new description")
+        updated_category = repository.update_category(saved_category)
+
+        assert updated_category.id == saved_category.id
+        assert updated_category.name.value == "new name"
+        assert updated_category.description.text == "new description"
+        # assert_is_equal(updated_category, saved_category)

@@ -38,3 +38,13 @@ class Category:
     @property
     def updated_at(self) -> datetime:
         return self._updated_at
+    
+    def rename(self, new_name: str) -> None:
+        name = Name(new_name)
+        self._name = name
+        return
+    
+    def update_description(self, new_description: str) -> None:
+        description = Description(new_description)
+        self._description = description
+        return

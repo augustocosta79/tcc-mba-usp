@@ -14,3 +14,8 @@ class CategorySchema(BaseModel):
 class CategoryCreateSchema(BaseModel):
     name: str
     description: Optional[str] = None
+
+
+class CategoryUpdateSchema(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None

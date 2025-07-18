@@ -1,4 +1,5 @@
 import json
+from uuid import UUID
 from tests.utils.assertions import assert_has_valid_id, assert_has_valid_timestamps
 import pytest
 from tests.utils.timed_client import TimedClient
@@ -69,4 +70,27 @@ class TestGetCategoryById:
         assert_has_valid_id(body)
         assert body["name"] == test_category.name.value
         assert body["description"] == test_category.description.text
+        assert_has_valid_timestamps(body)
+
+
+@pytest.mark.django_db
+class TestUpdateCategoryData:
+    def test_should_get_category_by_id_successfully(self, timed_client, test_category):
+        url = f"/api/categories/{test_category.id}"
+
+        payload = {
+            "name": "new name",
+            "description": "new description"
+        }
+        response = timed_client.patch(
+            url, data=json.dumps(payload), content_type="application/json"
+        )
+        assert response.status_code == 200
+
+        body = response.json()
+
+        assert_has_valid_id(body)
+        assert UUID(body["id"]) == test_category.id
+        assert body["name"] == payload["name"]
+        assert body["description"] == payload["description"]
         assert_has_valid_timestamps(body)

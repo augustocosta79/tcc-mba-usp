@@ -3,7 +3,6 @@ from apps.categories.entity import Category
 from apps.categories.repository_interface import CategoryRepositoryInterface
 from apps.categories.models import CategoryModel
 from apps.shared.value_objects import Name, Description
-from apps.shared.exceptions import NotFoundError
 
 class CategoryRepository(CategoryRepositoryInterface):
     def save(self, category: Category) -> Category:
@@ -45,3 +44,17 @@ class CategoryRepository(CategoryRepositoryInterface):
             created_at=category_data.created_at,
             updated_at=category_data.updated_at,
             )
+    
+    def update_category(self, category: Category) -> Category:
+        if not (category_data:=CategoryModel.objects.filter(id=category.id).first()):
+            return None
+        category_data.name = category.name.value
+        category_data.description = category.description.text
+        category_data.save()
+        return Category(
+            name=Name(category_data.name),
+            description=Description(category_data.description),
+            id=category_data.id,
+            created_at=category_data.created_at,
+            updated_at=category_data.updated_at,
+        )

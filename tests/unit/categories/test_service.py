@@ -5,6 +5,7 @@ from unittest.mock  import MagicMock
 from apps.shared.value_objects import Name, Description
 from apps.categories.entity import Category
 from apps.shared.exceptions import NotFoundError
+from apps.categories.schema import CategoryUpdateSchema
 import pytest
 
 def assert_is_equal(saved_category, category):
@@ -71,4 +72,31 @@ class TestCategoryService:
         with pytest.raises(NotFoundError) as exc:
             service.get_category_by_id("invalid id")
         assert "Category not found" in str(exc)
+
+    def test_should_update_category_successfully(self, category, service_and_repository):
+        service, mock_repository = service_and_repository
+        mock_category = MagicMock()
+        payload = CategoryUpdateSchema(
+            name="new name",
+            description="new description"
+        )
+        mock_repository.get_category_by_id.return_value = mock_category
+
+        service.update_category(mock_category.id, payload)
         
+        mock_repository.get_category_by_id.assert_called_once_with(mock_category.id)
+        mock_category.rename.assert_called_once_with(payload.name)
+        mock_category.update_description.assert_called_once_with(payload.description)
+        mock_repository.update_category.assert_called_once_with(mock_category)
+    
+    def test_should_fail_update_category_invalid_id(self, category, service_and_repository):
+        service, mock_repository = service_and_repository
+        payload = CategoryUpdateSchema(
+            name="new name",
+            description="new description"
+        )
+        mock_repository.get_category_by_id.return_value = None
+
+        with pytest.raises(NotFoundError) as exc:
+            service.update_category("invalid id", payload)
+        assert "Category not found" in str(exc)

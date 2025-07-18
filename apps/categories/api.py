@@ -1,10 +1,17 @@
+import traceback
+from http import HTTPStatus
 from uuid import UUID
+
+from apps.categories.repository import CategoryRepository
+from apps.categories.schema import (
+    CategoryCreateSchema,
+    CategorySchema,
+    CategoryUpdateSchema,
+)
+from apps.categories.service import CategoryService
 from ninja import Router
 from ninja.errors import HttpError
-from http import HTTPStatus
-from apps.categories.schema import CategorySchema, CategoryCreateSchema
-from apps.categories.service import CategoryService
-from apps.categories.repository import CategoryRepository
+from utils.error_schema import ErrorSchema
 from utils.logger import configure_logger
 
 categories_router = Router()
@@ -24,6 +31,8 @@ def create_category(request, payload: CategoryCreateSchema):
             updated_at=category.updated_at
         )
     except Exception as exc:
+        logger.error(f"Unexpected error on POST /categories: {str(exc)}")
+        traceback.print_exc()
         raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
     
 @categories_router.get("", response={HTTPStatus.OK: list[CategorySchema]})
@@ -41,9 +50,11 @@ def list_categories(request):
             for category in categories
         ]
     except Exception as exc:
+        logger.error(f"Unexpected error on GET /categories: {str(exc)}")
+        traceback.print_exc()
         raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
     
-@categories_router.get("{category_id}", response={HTTPStatus.OK: CategorySchema})
+@categories_router.get("{category_id}", response={HTTPStatus.OK: CategorySchema, HTTPStatus.NOT_FOUND: ErrorSchema})
 def get_category_by_id(request, category_id:UUID):
     try:
         category = service.get_category_by_id(category_id)
@@ -55,4 +66,22 @@ def get_category_by_id(request, category_id:UUID):
             updated_at=category.updated_at
             )
     except Exception as exc:
+        logger.error(f"Unexpected error on GET /categories/{category_id}: {str(exc)}")
+        traceback.print_exc()
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    
+@categories_router.patch("{category_id}", response={HTTPStatus.OK: CategorySchema, HTTPStatus.NOT_FOUND: ErrorSchema})
+def update_category(request, category_id:UUID, payload: CategoryUpdateSchema):
+    try:
+        category = service.update_category(category_id, payload)
+        return CategorySchema(
+            id=category.id,
+            name=category.name.value,
+            description=category.description.text,
+            created_at=category.created_at,
+            updated_at=category.updated_at
+            )
+    except Exception as exc:
+        logger.error(f"Unexpected error on PATCH /categories/{category_id}: {str(exc)}")
+        traceback.print_exc()
         raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
