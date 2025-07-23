@@ -58,3 +58,8 @@ class CategoryRepository(CategoryRepositoryInterface):
             created_at=category_data.created_at,
             updated_at=category_data.updated_at,
         )
+    
+    def delete_category(self, category_id:UUID):
+        if not (category:=CategoryModel.objects.filter(id=category_id).first()):
+            return None
+        category.delete()

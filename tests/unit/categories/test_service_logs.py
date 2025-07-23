@@ -48,3 +48,17 @@ class TestCategoryServiceLogs:
             service.update_category(mock_category.id, payload)
         mock_logger.warning.assert_called_once()
         assert "Category not found" in mock_logger.warning.call_args[0][0]
+
+    def test_should_log_category_deletion_successfully(self, create_service):
+        service, mock_repository, mock_logger = create_service
+        service.delete_category(mock_category.id)
+        mock_logger.info.assert_called_once()
+        assert "Category successfully deleted" in mock_logger.info.call_args[0][0]
+    
+    def test_should_successfully_log_category_deletion_failure(self, create_service):
+        service, mock_repository, mock_logger = create_service
+        mock_repository.get_category_by_id.return_value = None        
+        with pytest.raises(NotFoundError):
+            service.delete_category("invalid id")
+        mock_logger.warning.assert_called_once()
+        assert "Category not found" in mock_logger.warning.call_args[0][0]

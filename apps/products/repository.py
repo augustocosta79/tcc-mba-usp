@@ -3,6 +3,7 @@ from apps.products.repository_interface import ProductRepositoryInterface
 from apps.products.product_entity import Product
 from apps.products.models import ProductModel
 from apps.shared.value_objects import Title, Description, Price, Stock
+from apps.categories.entity import Category
 
 class ProductRepository(ProductRepositoryInterface):
     def save(self, product: Product) -> Product:
@@ -13,9 +14,11 @@ class ProductRepository(ProductRepositoryInterface):
             price=product.price.value,
             stock=product.stock.value,
             owner_id=product.owner_id,
-            category=product.category,
             is_active=product.is_active
         )
+
+        if len(product.categories) > 0:
+            saved_product.categories.set([category.id for category in product.categories])
 
         return Product(
             id=saved_product.id,
@@ -24,7 +27,7 @@ class ProductRepository(ProductRepositoryInterface):
             price=Price(saved_product.price),
             stock=Stock(saved_product.stock),
             owner_id=saved_product.owner_id,
-            category=saved_product.category,
+            categories=[Category(c.name, c.description, c.id) for c in saved_product.categories.all()],
             is_active=saved_product.is_active,
             created_at=saved_product.created_at,
             updated_at=saved_product.updated_at
@@ -40,14 +43,14 @@ class ProductRepository(ProductRepositoryInterface):
             price=Price(product_data.price),
             stock=Stock(product_data.stock),
             owner_id=product_data.owner_id,
-            category=product_data.category,
+            categories=[Category(c.name, c.description, c.id) for c in product_data.categories.all()],
             is_active=product_data.is_active,
             created_at=product_data.created_at,
             updated_at=product_data.updated_at
         )
     
-    def list_products_by_category(self, category: str):
-        products_data = ProductModel.objects.filter(category=category)
+    def list_products_by_category(self, category_id: UUID):
+        products_data = ProductModel.objects.filter(categories__id=category_id).prefetch_related("categories").distinct()
         return [
             Product(
                 id=product_data.id,
@@ -56,7 +59,7 @@ class ProductRepository(ProductRepositoryInterface):
                 price=Price(product_data.price),
                 stock=Stock(product_data.stock),
                 owner_id=product_data.owner_id,
-                category=product_data.category,
+                categories=[Category(c.name, c.description, c.id) for c in product_data.categories.all()],
                 is_active=product_data.is_active,
                 created_at=product_data.created_at,
                 updated_at=product_data.updated_at
@@ -66,7 +69,8 @@ class ProductRepository(ProductRepositoryInterface):
         ]
     
     def update_product(self, product: Product):
-        if not (product_data := ProductModel.objects.filter(id=product.id).first()):
+        product_data = ProductModel.objects.prefetch_related("categories").filter(id=product.id).first()
+        if not product_data:
             return None
 
         product_data.title = product.title.text
@@ -74,23 +78,27 @@ class ProductRepository(ProductRepositoryInterface):
         product_data.price = product.price.value
         product_data.stock = product.stock.value
         product_data.owner_id = product.owner_id
-        product_data.category = product.category
         product_data.is_active = product.is_active
+        product_data.categories.set([category.id for category in product.categories])
 
         product_data.save()
 
         return Product(
-                id=product_data.id,
-                title=Title(product_data.title),
-                description=Description(product_data.description),
-                price=Price(product_data.price),
-                stock=Stock(product_data.stock),
-                owner_id=product_data.owner_id,
-                category=product_data.category,
-                is_active=product_data.is_active,
-                created_at=product_data.created_at,
-                updated_at=product_data.updated_at
-            )
+            id=product_data.id,
+            title=Title(product_data.title),
+            description=Description(product_data.description),
+            price=Price(product_data.price),
+            stock=Stock(product_data.stock),
+            owner_id=product_data.owner_id,
+            categories=[
+                Category(c.name, c.description, c.id)
+                for c in product_data.categories.all()
+            ],
+            is_active=product_data.is_active,
+            created_at=product_data.created_at,
+            updated_at=product_data.updated_at
+        )
+
     
     def delete_product(self, product: Product) -> None:
         if not (product_data := ProductModel.objects.filter(id=product.id).first()):

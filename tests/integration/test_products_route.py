@@ -1,6 +1,8 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
+from apps.categories.repository import CategoryRepository
+from apps.categories.service import CategoryService
 import pytest
 from apps.products.repository import ProductRepository
 from apps.products.service import ProductService
@@ -9,6 +11,7 @@ from tests.utils.timed_client import TimedClient
 from tests.utils.assertions import assert_has_valid_id, assert_has_valid_timestamps
 
 from utils.logger import configure_logger
+logger = configure_logger(__name__)
 
 
 @pytest.fixture
@@ -24,21 +27,31 @@ def create_product_parameters():
     stock = 5
     owner_id = uuid4()
 
-    category = "test"
+    return title, description, price, stock, owner_id
 
-    return title, description, price, stock, owner_id, category
+
+@pytest.mark.django_db
+@pytest.fixture
+def create_test_category():
+    def _create(name="category", description="description"):
+        repository = CategoryRepository()
+        service = CategoryService(repository, logger)
+        return service.create_category(name, description)
+    return _create
+
 
 
 @pytest.fixture
-def create_test_product(create_product_parameters):
+def create_test_product(create_product_parameters, create_test_category):
     repository = ProductRepository()
-    logger = configure_logger(__name__)
     service = ProductService(repository, logger)
 
-    title, description, price, stock, owner_id, category = create_product_parameters
+    test_category = create_test_category()
+
+    title, description, price, stock, owner_id = create_product_parameters
 
     product = service.create_product(
-        title, description, price, stock, owner_id, category
+        title, description, price, stock, owner_id, [test_category.id]
     )
 
     return product
@@ -46,14 +59,15 @@ def create_test_product(create_product_parameters):
 
 @pytest.mark.django_db
 class TestCreateProduct:
-    def test_should_create_product_successfully(self, timed_client):
+    def test_should_create_product_successfully(self, timed_client, create_test_category):
+        test_category = create_test_category()
         valid_payload = {
             "title": "valid Title",
             "description": "valid description",
             "price": "1.99",
             "stock": 3,
             "owner_id": str(uuid4()),
-            "category": "test",
+            "categories": [str(test_category.id)],
         }
 
         response = timed_client.post(
@@ -69,7 +83,9 @@ class TestCreateProduct:
         assert body["price"] == valid_payload["price"]
         assert body["stock"] == valid_payload["stock"]
         assert body["owner_id"] == valid_payload["owner_id"]
-        assert body["category"] == valid_payload["category"]
+        assert body["categories"][0]["id"] == str(test_category.id)
+        assert body["categories"][0]["name"] == test_category.name.value
+        assert body["categories"][0]["description"] == test_category.description.text
         assert "created_at" in body
         assert "updated_at" in body
         assert_has_valid_timestamps(body)
@@ -94,7 +110,9 @@ class TestGetProductbyId:
         assert body["price"] == str(existing_product.price.value)
         assert body["stock"] == existing_product.stock.value
         assert body["owner_id"] == str(existing_product.owner_id)
-        assert body["category"] == existing_product.category
+        assert body["categories"][0]["id"] == str(existing_product.categories[0].id)
+        assert body["categories"][0]["name"] == str(existing_product.categories[0].name)
+        assert body["categories"][0]["description"] == str(existing_product.categories[0].description)
         assert body["is_active"] is existing_product.is_active
         assert_has_valid_timestamps(body)
 
@@ -106,7 +124,7 @@ class TestGetProductByCategory:
     ):
         product = create_test_product
 
-        response = timed_client.get("/api/products", {"category": product.category})
+        response = timed_client.get("/api/products", {"category_id": product.categories[0].id})
         assert response.status_code == 200
 
         body = response.json()
@@ -114,7 +132,7 @@ class TestGetProductByCategory:
         assert isinstance(body, list)
         assert len(body) == 1
         assert body[0]["id"] == str(product.id)
-        assert body[0]["category"] == product.category
+        assert body[0]["categories"][0]["id"] == str(product.categories[0].id)
         assert_has_valid_timestamps(body[0])
 
 
@@ -135,9 +153,10 @@ def send_update_request():
 @pytest.mark.django_db
 class TestUpdateProduct:
     def test_should_update_product_data_successfully(
-        self, timed_client, create_test_product, send_update_request
+        self, timed_client, create_test_product, send_update_request, create_test_category
     ):
         product = create_test_product
+        create_test_category()
 
         title_payload = {"title": "changed title"}
         body = send_update_request(timed_client, product.id, title_payload)
@@ -148,7 +167,7 @@ class TestUpdateProduct:
         assert body["price"] == str(product.price.value)
         assert body["stock"] == product.stock.value
         assert body["owner_id"] == str(product.owner_id)
-        assert body["category"] == product.category
+        assert body["categories"][0]["id"] == str(product.categories[0].id)
         assert body["is_active"] is product.is_active
         assert_has_valid_timestamps(body)
 
@@ -164,9 +183,13 @@ class TestUpdateProduct:
         body = send_update_request(timed_client, product.id, stock_payload)
         assert body["stock"] == stock_payload["stock"]
 
-        category_payload = {"category": f"{str(uuid4())}"}
+        new_cat_name = "new category"
+        new_cat_desc = "new description"
+        new_category = create_test_category(new_cat_name, new_cat_desc)
+        category_payload = {"categories": [str(new_category.id)]}
         body = send_update_request(timed_client, product.id, category_payload)
-        assert body["category"] == category_payload["category"]
+        assert body["categories"][0]["name"] == new_cat_name
+        assert body["categories"][0]["id"] == category_payload["categories"][0]
 
 
 @pytest.mark.django_db

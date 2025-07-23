@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from datetime import datetime
 from apps.shared.value_objects import Title, Description, Price, Stock
+from apps.categories.entity import Category
 
 class Product:
     def __init__(
@@ -12,7 +13,7 @@ class Product:
         price: Price,
         stock: Stock,
         owner_id: UUID,
-        category: str,
+        categories: list[Category],
         id: Optional[UUID] = None,
         is_active: Optional[bool] = None,
         created_at: Optional[datetime] = None,
@@ -24,7 +25,7 @@ class Product:
         self._price = price
         self._stock = stock
         self._owner_id = owner_id
-        self._category = category
+        self._categories = categories or []
         self._is_active = is_active if is_active is not None else True
         self._created_at = created_at
         self._updated_at = updated_at
@@ -54,8 +55,8 @@ class Product:
         return self._owner_id
     
     @property
-    def category(self) -> str:
-        return self._category
+    def categories(self) -> list[Category]:
+        return self._categories
     
     @property
     def is_active(self):
@@ -82,8 +83,8 @@ class Product:
     def change_stock(self, new_stock: int):
         self._stock = Stock(new_stock)
     
-    def change_category(self, new_category: str):
-        self._category = new_category
+    def change_categories(self, new_categories: list[Category]):
+        self._categories = new_categories
     
     def activate(self):
         self._is_active = True

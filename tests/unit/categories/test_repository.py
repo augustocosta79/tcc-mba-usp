@@ -61,4 +61,11 @@ class TestCategoryRepository:
         assert updated_category.id == saved_category.id
         assert updated_category.name.value == "new name"
         assert updated_category.description.text == "new description"
-        # assert_is_equal(updated_category, saved_category)
+        assert_is_equal(updated_category, saved_category)
+
+    def test_should_delete_category_successfully(self, category_and_saved_category):
+        category, saved_category = category_and_saved_category
+        repository.delete_category(saved_category.id)
+        category = repository.get_category_by_id(saved_category.id)
+        print(category)
+        assert category is None

@@ -8,7 +8,19 @@ from apps.products.schema import ProductActivationSchema, ProductUpdateSchema
 from apps.products.service import ProductService
 from apps.shared.exceptions import NotFoundError
 from apps.shared.value_objects import Description, Price, Stock, Title
+from apps.categories.entity import Category
 
+
+cat_name = "Category"
+cat_desc = "Cat desc"
+test_category = Category(name=cat_name, description=cat_desc)
+categories = [ test_category ]
+
+def assert_list_has_valid_categories(test_categories: list[Category]):
+    assert isinstance(test_categories, list)
+    assert isinstance(test_categories[0], Category)
+    assert test_categories[0].name == cat_name
+    assert test_categories[0].description == cat_desc
 
 @pytest.fixture
 def product_args():
@@ -17,21 +29,20 @@ def product_args():
     price = "1.99"
     stock = 5
     owner_id = uuid4()
-    category = "test"
 
-    return title, description, price, stock, owner_id, category
+    return title, description, price, stock, owner_id
 
 
 @pytest.fixture
 def test_product(product_args):
-    title, description, price, stock, owner_id, category = product_args
+    title, description, price, stock, owner_id = product_args
     test_product = Product(
         Title(title),
         Description(description),
         Price(price),
         Stock(stock),
         owner_id,
-        category,
+        categories,
         uuid4(),
         True,
         datetime.now(),
@@ -39,12 +50,13 @@ def test_product(product_args):
     )
     return test_product
 
+mock_category = MagicMock()
 
 @pytest.fixture
 def mock_repository_and_service():
     mock_repository = MagicMock()
     mock_logger = MagicMock()
-    service = ProductService(mock_repository, mock_logger)
+    service = ProductService(mock_repository, mock_logger, mock_category)
     return mock_repository, service
 
 
@@ -61,7 +73,9 @@ class TestProductService:
     def test_should_create_product_with_valid_data(
         self, product_args, test_product, mock_repository_and_service
     ):
-        title, description, price, stock, owner_id, category = product_args
+        title, description, price, stock, owner_id = product_args
+
+        mock_category.get_category_by_id.return_value = test_category
 
         mock_repository, service = mock_repository_and_service
 
@@ -73,7 +87,7 @@ class TestProductService:
             price=price,
             stock=stock,
             owner_id=owner_id,
-            category=category,
+            categories_ids=[ test_category.id ],
         )
 
         assert isinstance(product, Product)
@@ -83,7 +97,7 @@ class TestProductService:
         assert product.price == Price(price)
         assert product.stock == Stock(stock)
         assert product.owner_id == owner_id
-        assert product.category == category
+        assert_list_has_valid_categories(product.categories)
         assert product.is_active is True
         assert product.created_at is not None
         assert product.updated_at is not None
@@ -92,7 +106,7 @@ class TestProductService:
     def test_should_get_product_by_id_successfully(
         self, product_args, test_product, mock_repository_and_service
     ):
-        title, description, price, stock, owner_id, category = product_args
+        title, description, price, stock, owner_id = product_args
 
         mock_repository, service = mock_repository_and_service
 
@@ -108,7 +122,7 @@ class TestProductService:
         assert retrieved_product.price == Price(price)
         assert retrieved_product.stock == Stock(stock)
         assert retrieved_product.owner_id == owner_id
-        assert retrieved_product.category == category
+        assert_list_has_valid_categories(retrieved_product.categories)
         assert retrieved_product.is_active is True
         assert retrieved_product.created_at is not None
         assert retrieved_product.updated_at is not None
@@ -133,7 +147,7 @@ class TestProductService:
 
         mock_repository.list_products_by_category.return_value = [test_product]
 
-        products = service.list_products_by_category(category="test")
+        products = service.list_products_by_category(category_id=test_product.id)
 
         assert mock_repository.list_products_by_category.assert_called_once
         assert test_product in products
@@ -166,11 +180,9 @@ class TestProductService:
         update_product(service, mock_product.id, stock_payload)
         mock_product.change_stock.assert_called_once_with(stock_payload["stock"])
 
-        category_payload = {"category": str(uuid4())}
+        category_payload = {"categories": [uuid4()]}
         update_product(service, mock_product.id, category_payload)
-        mock_product.change_category.assert_called_once_with(
-            category_payload["category"]
-        )
+        mock_product.change_categories.assert_called_once()
 
     def test_should_raise_not_found_error_on_update_product_with_invalid_id(
         self, mock_repository_and_service, update_product

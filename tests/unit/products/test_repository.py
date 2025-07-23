@@ -6,12 +6,26 @@ import pytest
 from apps.products.product_entity import Product
 from apps.products.repository import ProductRepository
 from apps.shared.value_objects import Description, Price, Stock, Title
+from apps.categories.service import CategoryService
+from apps.categories.repository import CategoryRepository
+from utils.logger import configure_logger
+from apps.categories.entity import Category
 
-from apps.shared.exceptions import NotFoundError
+logger = configure_logger(__name__)
+repository = CategoryRepository()
+category_service = CategoryService(repository, logger)
+cat_name = "category"
+cat_desc = "description"
 
+@pytest.mark.django_db
+@pytest.fixture
+def categories():
+    category = category_service.create_category(cat_name, cat_desc)
+    categories = [ category ]
+    return categories
 
 @pytest.fixture
-def create_product_and_repository():
+def create_product_and_repository(categories):
     title_string = "Title test"
     title = Title(title_string)
 
@@ -26,9 +40,7 @@ def create_product_and_repository():
 
     owner_id = uuid4()
 
-    category = "test"
-
-    product = Product(title, description, price, stock, owner_id, category)
+    product = Product(title, description, price, stock, owner_id, categories)
 
     repository = ProductRepository()
 
@@ -37,7 +49,7 @@ def create_product_and_repository():
 
 @pytest.mark.django_db
 class TestProductRepository:
-    def test_should_save_product_successfully(self, create_product_and_repository):
+    def test_should_save_product_successfully(self, create_product_and_repository, categories):
         product, repository = create_product_and_repository
 
         saved_product = repository.save(product)
@@ -51,6 +63,12 @@ class TestProductRepository:
         assert saved_product.stock == product.stock
         assert isinstance(saved_product.owner_id, UUID)
         assert saved_product.owner_id == product.owner_id
+        assert isinstance(saved_product.categories, list)
+        assert isinstance(saved_product.categories[0], Category)
+        assert saved_product.categories[0].id == categories[0].id
+        assert saved_product.categories[0].name == categories[0].name.value
+        assert saved_product.categories[0].description == categories[0].description.text
+        
 
     def test_should_get_product_by_id(self, create_product_and_repository):
         product, repository = create_product_and_repository
@@ -74,7 +92,7 @@ class TestProductRepository:
         product, repository = create_product_and_repository
         saved_product = repository.save(product)
 
-        products = repository.list_products_by_category(category=product.category)
+        products = repository.list_products_by_category(category_id=saved_product.categories[0].id)
 
         assert isinstance(products, list)
         assert len(products) == 1
@@ -116,10 +134,12 @@ class TestProductRepository:
         assert updated_product.stock.value == new_stock
         assert updated_product.updated_at > product.updated_at
 
-        new_category = str(uuid4())
-        product.change_category(new_category)
+        new_category = category_service.create_category("new cat", "new desc")
+        product.change_categories([new_category])
         updated_product = repository.update_product(product)
-        assert updated_product.category == new_category
+        assert updated_product.categories[0].id == new_category.id
+        assert updated_product.categories[0].name == new_category.name.value
+        assert updated_product.categories[0].description == new_category.description.text
         assert updated_product.updated_at > product.updated_at
 
         product.deactivate()

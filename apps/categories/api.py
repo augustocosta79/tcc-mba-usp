@@ -85,3 +85,15 @@ def update_category(request, category_id:UUID, payload: CategoryUpdateSchema):
         logger.error(f"Unexpected error on PATCH /categories/{category_id}: {str(exc)}")
         traceback.print_exc()
         raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    
+@categories_router.delete("{category_id}", response={HTTPStatus.NO_CONTENT: None, HTTPStatus.NOT_FOUND: ErrorSchema})
+def delete_category(request, category_id:UUID):
+    if not (category:=service.get_category_by_id(category_id)):
+        raise HttpError(HTTPStatus.NOT_FOUND, "Category not found")
+    try:
+        service.delete_category(category.id)
+        return HTTPStatus.NO_CONTENT, None
+    except Exception as exc:
+        logger.error(f"Unexpected error on DELETE /categories/{category_id}: {str(exc)}")
+        traceback.print_exc()
+        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))

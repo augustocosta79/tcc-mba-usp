@@ -1,5 +1,6 @@
 from datetime import datetime
 from uuid import UUID
+from apps.categories.entity import Category
 from tests.utils import parse_iso_datetime
 
 def assert_has_valid_timestamps(body: dict) -> None:

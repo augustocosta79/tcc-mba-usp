@@ -43,3 +43,11 @@ class CategoryService:
         updated_category = self.repository.update_category(category)
         self.logger.info(f"Category successfully updated - New name {updated_category.name.value}, Id {updated_category.id}")
         return updated_category
+    
+    def delete_category(self, category_id:UUID) -> None:
+        if not (category:=self.repository.get_category_by_id(category_id)):
+            self.logger.warning(f"Category not found - ID {category_id}")
+            raise NotFoundError(f"Category not found - ID {category_id}")
+        self.repository.delete_category(category.id)
+        self.logger.info("Category successfully deleted")
+        return

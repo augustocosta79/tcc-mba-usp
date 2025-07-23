@@ -1,5 +1,5 @@
 import json
-from uuid import UUID
+from uuid import UUID, uuid4
 from tests.utils.assertions import assert_has_valid_id, assert_has_valid_timestamps
 import pytest
 from tests.utils.timed_client import TimedClient
@@ -94,3 +94,16 @@ class TestUpdateCategoryData:
         assert body["name"] == payload["name"]
         assert body["description"] == payload["description"]
         assert_has_valid_timestamps(body)
+
+
+@pytest.mark.django_db
+class TestDeleteCategory:
+    def test_should_delete_category_by_id_successfully(self, timed_client, test_category):
+        url = f"/api/categories/{test_category.id}"
+        response = timed_client.delete(url)
+        assert response.status_code == 204
+    
+    def test_should_fail_delete_category_invalid_id(self, timed_client, test_category):
+        url = f"/api/categories/{uuid4()}"
+        response = timed_client.delete(url)
+        assert response.status_code == 404

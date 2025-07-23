@@ -6,12 +6,18 @@ from apps.products.repository_interface import ProductRepositoryInterface
 from apps.products.schema import ProductActivationSchema, ProductUpdateSchema
 from apps.shared.exceptions import NotFoundError
 from apps.shared.value_objects import Description, Price, Stock, Title
+from apps.categories.service import CategoryService
+from apps.categories.repository import CategoryRepository
+from utils.logger import configure_logger
 
+logger = configure_logger(__name__)
+category_repository = CategoryRepository()
 
 class ProductService:
-    def __init__(self, repository:ProductRepositoryInterface, logger: logging.Logger):
+    def __init__(self, repository:ProductRepositoryInterface, logger: logging.Logger, category_service: CategoryService = None):
         self.repository = repository
         self.logger = logger
+        self.category_service = category_service or CategoryService(category_repository, logger)
 
     def create_product(
             self,
@@ -20,7 +26,7 @@ class ProductService:
             price: str,
             stock: int,
             owner_id: UUID,
-            category: str
+            categories_ids: list[UUID]
     ) -> Product:
         
         title = Title(title)
@@ -28,7 +34,7 @@ class ProductService:
         price = Price(price)
         stock = Stock(stock)
         owner_id = owner_id
-        category = category
+        categories = [self.category_service.get_category_by_id(uuid) for uuid in categories_ids]
         
         product = Product(
             title,
@@ -36,7 +42,7 @@ class ProductService:
             price,
             stock,
             owner_id,
-            category
+            categories
         )
 
         saved_product = self.repository.save(product)
@@ -48,28 +54,35 @@ class ProductService:
             raise NotFoundError(f"Product with id {product_id} not found")
         return product
     
-    def list_products_by_category(self, category: str) -> list[Product]:
-        return self.repository.list_products_by_category(category)
+    def list_products_by_category(self, category_id: UUID) -> list[Product]:
+        return self.repository.list_products_by_category(category_id)
     
     def update_product(self, product_id: UUID, payload: ProductUpdateSchema) -> Product:        
         if not (product := self.repository.get_product_by_id(product_id)):
             self.logger.warning(f"Can't update Product with id {product_id}. Product not found")
             raise NotFoundError(f"Can't update Product with id {product_id}. Product not found")
-        
+
+        payload_data = payload.model_dump(exclude_none=True)
+
+        if "categories" in payload_data:
+            category_ids = payload_data.pop("categories")
+            categories = [self.category_service.get_category_by_id(cid) for cid in category_ids]
+            product.change_categories(categories)
+
         operations = {
             "title": product.change_title,
             "description": product.change_description,
             "price": product.change_price,
             "stock": product.change_stock,
-            "category": product.change_category
         }
-        
-        for attr, value in payload.model_dump(exclude_none=True).items():
+
+        for attr, value in payload_data.items():
             operations[attr](value)
 
         updated_product = self.repository.update_product(product)
         self.logger.info(f"Product successfully updated: id {updated_product.id} - name {updated_product.title}")
         return updated_product
+
     
     def product_activation(self, product_id: UUID, payload: ProductActivationSchema) -> Product:
         product = self.repository.get_product_by_id(product_id)

@@ -11,10 +11,11 @@ from apps.products.schema import (
 )
 from apps.products.service import ProductService
 from apps.shared.exceptions import NotFoundError
-from ninja import Router
+from ninja import Router, Query
 from ninja.errors import HttpError
 from utils.error_schema import ErrorSchema
 from typing import List
+from apps.products.utils import build_category_nested_schema_list
 
 from utils.logger import configure_logger
 
@@ -39,7 +40,7 @@ def create_product(request, payload: ProductCreateSchema):
             payload.price,
             payload.stock,
             payload.owner_id,
-            payload.category,
+            payload.categories,
         )
 
         return HTTPStatus.CREATED, ProductSchema(
@@ -49,7 +50,7 @@ def create_product(request, payload: ProductCreateSchema):
             price=str(created_product.price.value),
             stock=created_product.stock.value,
             owner_id=created_product.owner_id,
-            category=created_product.category,
+            categories=build_category_nested_schema_list(created_product.categories),
             is_active=created_product.is_active,
             created_at=created_product.created_at,
             updated_at=created_product.updated_at,
@@ -74,7 +75,7 @@ def get_product_by_id(request, product_id: UUID):
             price=str(product.price.value),
             stock=product.stock.value,
             owner_id=product.owner_id,
-            category=product.category,
+            categories=build_category_nested_schema_list(product.categories),
             is_active=product.is_active,
             created_at=product.created_at,
             updated_at=product.updated_at,
@@ -92,9 +93,9 @@ def get_product_by_id(request, product_id: UUID):
     "",
     response={HTTPStatus.OK: List[ProductSchema]},
 )
-def list_products_by_category(request, category: str):
+def list_products_by_category(request, category_id: UUID = Query(...)):
     try:
-        products = service.list_products_by_category(category)
+        products = service.list_products_by_category(category_id)
         return [
             ProductSchema(
                 id=product.id,
@@ -103,7 +104,7 @@ def list_products_by_category(request, category: str):
                 price=str(product.price.value),
                 stock=product.stock.value,
                 owner_id=product.owner_id,
-                category=product.category,
+                categories=build_category_nested_schema_list(product.categories),
                 is_active=product.is_active,
                 created_at=product.created_at,
                 updated_at=product.updated_at,
@@ -111,7 +112,7 @@ def list_products_by_category(request, category: str):
             for product in products
         ]
     except Exception as exc:
-        logger.error(f"Unexpected error on GET /products/{category}: {str(exc)}")
+        logger.error(f"Unexpected error on GET /products/{category_id}: {str(exc)}")
         traceback.print_exc()
         raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
 
@@ -132,7 +133,7 @@ def update_product(request, product_id: UUID, payload: ProductUpdateSchema):
             price=str(updated_product.price.value),
             stock=updated_product.stock.value,
             owner_id=updated_product.owner_id,
-            category=updated_product.category,
+            categories=build_category_nested_schema_list(updated_product.categories),
             is_active=updated_product.is_active,
             created_at=updated_product.created_at,
             updated_at=updated_product.updated_at,
@@ -162,7 +163,7 @@ def product_activation(request, product_id: UUID, payload: ProductActivationSche
             price=str(product.price.value),
             stock=product.stock.value,
             owner_id=product.owner_id,
-            category=product.category,
+            categories=build_category_nested_schema_list(product.categories),
             is_active=product.is_active,
             created_at=product.created_at,
             updated_at=product.updated_at,

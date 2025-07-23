@@ -3,6 +3,8 @@ from uuid import UUID
 from typing import Optional
 from pydantic import BaseModel
 
+from apps.categories.schema import CategoryNestedSchema
+
 class ProductSchema(BaseModel):
     id: UUID
     title: str
@@ -10,7 +12,7 @@ class ProductSchema(BaseModel):
     price: str
     stock: int
     owner_id: UUID
-    category: str
+    categories: list[CategoryNestedSchema]
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -23,7 +25,7 @@ class ProductCreateSchema(BaseModel):
     price: str
     stock: int
     owner_id: UUID
-    category: str
+    categories: list[UUID]
 
 
 class ProductUpdateSchema(BaseModel):
@@ -32,7 +34,7 @@ class ProductUpdateSchema(BaseModel):
     price: Optional[str] = None
     stock: Optional[int] = None
     owner_id: Optional[UUID] = None
-    category: Optional[str] = None
+    categories: Optional[list[UUID]] = None
     is_active: Optional[bool] = None
 
 class ProductActivationSchema(BaseModel):

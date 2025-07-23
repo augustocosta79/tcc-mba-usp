@@ -5,6 +5,7 @@ from apps.products.schema import ProductActivationSchema, ProductUpdateSchema
 import pytest
 from apps.products.service import ProductService
 from apps.shared.exceptions import NotFoundError
+from apps.categories.entity import Category
 
 mock_product = MagicMock()
 
@@ -12,7 +13,8 @@ mock_product = MagicMock()
 def create_service():
     mock_repository = MagicMock()
     mock_logger = MagicMock()
-    service = ProductService(mock_repository, mock_logger)
+    mock_category_service = MagicMock()
+    service = ProductService(mock_repository, mock_logger, mock_category_service)
 
     return service, mock_repository, mock_logger
 
@@ -23,9 +25,12 @@ def product_args() -> list:
     price = "1.99"
     stock = 5
     owner_id = uuid4()
-    category = "test"
+    cat_name = "Category"
+    cat_desc = "Cat desc"
+    test_category = Category(name=cat_name, description=cat_desc)
+    categories_ids = [ test_category.id ]
 
-    return [title, description, price, stock, owner_id, category]
+    return [title, description, price, stock, owner_id, categories_ids]
 
 class TestProductsLogs:
     def test_should_log_product_creation_successfully(self, product_args: list, create_service):

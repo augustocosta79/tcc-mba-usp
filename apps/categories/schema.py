@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
+
 from pydantic import BaseModel
+
 
 class CategorySchema(BaseModel):
     id: UUID
@@ -9,6 +11,12 @@ class CategorySchema(BaseModel):
     description: Optional[str]
     created_at: datetime
     updated_at: datetime
+
+
+class CategoryNestedSchema(BaseModel):
+    id: UUID
+    name: str
+    description: Optional[str]
 
 
 class CategoryCreateSchema(BaseModel):

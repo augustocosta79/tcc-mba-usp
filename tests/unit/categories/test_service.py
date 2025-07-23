@@ -100,3 +100,16 @@ class TestCategoryService:
         with pytest.raises(NotFoundError) as exc:
             service.update_category("invalid id", payload)
         assert "Category not found" in str(exc)
+
+    def test_should_delete_category_successfully(self, category, service_and_repository):
+        service, mock_repository = service_and_repository
+        mock_repository.get_category_by_id.return_value = category
+        service.delete_category(category.id)
+        mock_repository.delete_category.assert_called_once_with(category.id)
+    
+    def test_should_fail_delete_category_invalid_id(self, category, service_and_repository):
+        service, mock_repository = service_and_repository
+        mock_repository.get_category_by_id.return_value = None
+        with pytest.raises(NotFoundError) as exc:
+            service.delete_category(category.id)
+        assert "Category not found" in str(exc)
