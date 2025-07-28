@@ -3,7 +3,7 @@ from apps.products.repository_interface import ProductRepositoryInterface
 from apps.products.product_entity import Product
 from apps.products.models import ProductModel
 from apps.shared.value_objects import Title, Description, Price, Stock
-from apps.categories.entity import Category
+from apps.categories.serializers import category_model_to_entity
 
 class ProductRepository(ProductRepositoryInterface):
     def save(self, product: Product) -> Product:
@@ -27,7 +27,7 @@ class ProductRepository(ProductRepositoryInterface):
             price=Price(saved_product.price),
             stock=Stock(saved_product.stock),
             owner_id=saved_product.owner_id,
-            categories=[Category(c.name, c.description, c.id) for c in saved_product.categories.all()],
+            categories=[category_model_to_entity(c) for c in saved_product.categories.all()],
             is_active=saved_product.is_active,
             created_at=saved_product.created_at,
             updated_at=saved_product.updated_at
@@ -43,7 +43,7 @@ class ProductRepository(ProductRepositoryInterface):
             price=Price(product_data.price),
             stock=Stock(product_data.stock),
             owner_id=product_data.owner_id,
-            categories=[Category(c.name, c.description, c.id) for c in product_data.categories.all()],
+            categories=[category_model_to_entity(c) for c in product_data.categories.all()],
             is_active=product_data.is_active,
             created_at=product_data.created_at,
             updated_at=product_data.updated_at
@@ -59,7 +59,7 @@ class ProductRepository(ProductRepositoryInterface):
                 price=Price(product_data.price),
                 stock=Stock(product_data.stock),
                 owner_id=product_data.owner_id,
-                categories=[Category(c.name, c.description, c.id) for c in product_data.categories.all()],
+                categories=[category_model_to_entity(c) for c in product_data.categories.all()],
                 is_active=product_data.is_active,
                 created_at=product_data.created_at,
                 updated_at=product_data.updated_at
@@ -91,7 +91,7 @@ class ProductRepository(ProductRepositoryInterface):
             stock=Stock(product_data.stock),
             owner_id=product_data.owner_id,
             categories=[
-                Category(c.name, c.description, c.id)
+                category_model_to_entity(c)
                 for c in product_data.categories.all()
             ],
             is_active=product_data.is_active,

@@ -2,12 +2,8 @@ import traceback
 from http import HTTPStatus
 from uuid import UUID
 
-from ninja import Router
-from ninja.errors import HttpError
-
 from apps.shared.decorators.require_active_user import require_active_user
 from apps.shared.exceptions import ConflictError
-from apps.shared.value_objects import Email, Name, Password
 from apps.users.repository import UserRepository
 from apps.users.schema import (
     UserActivationSchema,
@@ -16,7 +12,10 @@ from apps.users.schema import (
     UserSchema,
     UserUpdateSchema,
 )
+from apps.users.serializers import user_to_schema
 from apps.users.service import UserService
+from ninja import Router
+from ninja.errors import HttpError
 from utils.error_schema import ErrorSchema
 from utils.logger import configure_logger
 
@@ -42,15 +41,7 @@ def create_user(request, payload: UserCreateSchema):
             password=payload.password,
             username=payload.username,
         )
-        return HTTPStatus.CREATED, UserSchema(
-            id=user.id,
-            name=user.name.value,
-            email=user.email.value,
-            username=user.username,
-            is_active=user.is_active,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-        )
+        return HTTPStatus.CREATED, user_to_schema(user)
     except ConflictError as e:
         raise HttpError(HTTPStatus.CONFLICT, str(e))
     except Exception as e:
@@ -63,18 +54,7 @@ def create_user(request, payload: UserCreateSchema):
 def list_users(request):
     try:
         users = service.list_users()
-        return [
-            UserSchema(
-                id=user.id,
-                name=user.name.value,
-                email=user.email.value,
-                username=user.username,
-                is_active=user.is_active,
-                created_at=user.created_at,
-                updated_at=user.updated_at,
-            )
-            for user in users
-        ]
+        return [user_to_schema(user) for user in users]
     except Exception as e:
         logger.error(f"Unexpected error on GET /users: {str(e)}")
         traceback.print_exc()
@@ -85,15 +65,7 @@ def list_users(request):
 def get_user_by_id(request, user_id: UUID):
     try:
         user = service.get_user_by_id(user_id=user_id)
-        return UserSchema(
-            id=user.id,
-            name=user.name.value,
-            email=user.email.value,
-            username=user.username,
-            is_active=user.is_active,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-        )
+        return user_to_schema(user)
     except Exception as e:
         logger.error(f"Unexpected error on GET /users/{user_id}: {str(e)}")
         traceback.print_exc()
@@ -105,15 +77,7 @@ def get_user_by_id(request, user_id: UUID):
 def update_user(request, user_id: UUID, payload: UserUpdateSchema):
     try:
         user = service.update_user(user_id=user_id, payload=payload)
-        return UserSchema(
-            id=user.id,
-            name=user.name.value,
-            email=user.email.value,
-            username=user.username,
-            is_active=user.is_active,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-        )
+        return user_to_schema(user)
     except Exception as e:
         logger.error(f"Unexpected error on PATCH /users/{user_id}: {str(e)}")
         traceback.print_exc()
@@ -125,15 +89,7 @@ def user_activation(request, user_id: UUID, payload: UserActivationSchema):
     try:
         user = service.get_user_by_id(user_id=user_id)
         deactivated_user = service.user_activation(user_id=user.id, payload=payload)
-        return UserSchema(
-            id=deactivated_user.id,
-            name=deactivated_user.name.value,
-            email=deactivated_user.email.value,
-            username=deactivated_user.username,
-            is_active=deactivated_user.is_active,
-            created_at=deactivated_user.created_at,
-            updated_at=deactivated_user.updated_at,
-        )
+        return user_to_schema(deactivated_user)
     except Exception as e:
         logger.error(f"Unexpected error on PATCH /users/{user_id}/activation: {str(e)}")
         traceback.print_exc()

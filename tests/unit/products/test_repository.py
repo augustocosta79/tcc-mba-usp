@@ -66,8 +66,8 @@ class TestProductRepository:
         assert isinstance(saved_product.categories, list)
         assert isinstance(saved_product.categories[0], Category)
         assert saved_product.categories[0].id == categories[0].id
-        assert saved_product.categories[0].name == categories[0].name.value
-        assert saved_product.categories[0].description == categories[0].description.text
+        assert saved_product.categories[0].name.value == categories[0].name.value
+        assert saved_product.categories[0].description.text == categories[0].description.text
         
 
     def test_should_get_product_by_id(self, create_product_and_repository):
@@ -138,8 +138,8 @@ class TestProductRepository:
         product.change_categories([new_category])
         updated_product = repository.update_product(product)
         assert updated_product.categories[0].id == new_category.id
-        assert updated_product.categories[0].name == new_category.name.value
-        assert updated_product.categories[0].description == new_category.description.text
+        assert updated_product.categories[0].name.value == new_category.name.value
+        assert updated_product.categories[0].description.text == new_category.description.text
         assert updated_product.updated_at > product.updated_at
 
         product.deactivate()
