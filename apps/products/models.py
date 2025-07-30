@@ -7,7 +7,7 @@ class ProductModel(models.Model):
     description = models.CharField(max_length=256)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.IntegerField()
-    owner_id = models.UUIDField()
+    owner = models.ForeignKey("users.UserModel", on_delete=models.CASCADE, related_name="products")
     categories = models.ManyToManyField("categories.CategoryModel")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

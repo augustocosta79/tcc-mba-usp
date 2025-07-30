@@ -2,6 +2,8 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
+from apps.users.repository import UserRepository
+from apps.users.service import UserService
 import pytest
 from apps.products.product_entity import Product
 from apps.products.repository import ProductRepository
@@ -25,7 +27,14 @@ def categories():
     return categories
 
 @pytest.fixture
-def create_product_and_repository(categories):
+def test_user():
+    repository = UserRepository()
+    service = UserService(repository, logger)
+    user = service.create_user("test user", "email@test.com", "Abc@1234", "usernameTest")
+    return user
+
+@pytest.fixture
+def create_product_and_repository(categories, test_user):
     title_string = "Title test"
     title = Title(title_string)
 
@@ -38,7 +47,7 @@ def create_product_and_repository(categories):
     stock_value = 5
     stock = Stock(stock_value)
 
-    owner_id = uuid4()
+    owner_id = test_user.id
 
     product = Product(title, description, price, stock, owner_id, categories)
 

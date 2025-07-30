@@ -11,6 +11,10 @@ from apps.shared.value_objects import Description, Price, Stock, Title
 from apps.categories.entity import Category
 
 
+mock_category_service = MagicMock()
+mock_user_service = MagicMock()
+mock_user = MagicMock()
+
 cat_name = "Category"
 cat_desc = "Cat desc"
 test_category = Category(name=cat_name, description=cat_desc)
@@ -28,7 +32,7 @@ def product_args():
     description = "description"
     price = "1.99"
     stock = 5
-    owner_id = uuid4()
+    owner_id = mock_user.id
 
     return title, description, price, stock, owner_id
 
@@ -50,13 +54,11 @@ def test_product(product_args):
     )
     return test_product
 
-mock_category = MagicMock()
-
 @pytest.fixture
 def mock_repository_and_service():
     mock_repository = MagicMock()
     mock_logger = MagicMock()
-    service = ProductService(mock_repository, mock_logger, mock_category)
+    service = ProductService(mock_repository, mock_logger, mock_category_service, mock_user_service)
     return mock_repository, service
 
 
@@ -74,11 +76,10 @@ class TestProductService:
         self, product_args, test_product, mock_repository_and_service
     ):
         title, description, price, stock, owner_id = product_args
-
-        mock_category.get_category_by_id.return_value = test_category
-
         mock_repository, service = mock_repository_and_service
 
+        mock_user_service.get_user_by_id.return_value = mock_user
+        mock_category_service.get_category_by_id.return_value = test_category
         mock_repository.save.return_value = test_product
 
         product = service.create_product(

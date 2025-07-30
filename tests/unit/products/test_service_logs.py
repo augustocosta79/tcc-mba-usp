@@ -8,13 +8,15 @@ from apps.shared.exceptions import NotFoundError
 from apps.categories.entity import Category
 
 mock_product = MagicMock()
+mock_user = MagicMock()
+mock_user_service = MagicMock()
 
 @pytest.fixture
 def create_service():
     mock_repository = MagicMock()
     mock_logger = MagicMock()
     mock_category_service = MagicMock()
-    service = ProductService(mock_repository, mock_logger, mock_category_service)
+    service = ProductService(mock_repository, mock_logger, mock_category_service, mock_user_service)
 
     return service, mock_repository, mock_logger
 
@@ -24,7 +26,7 @@ def product_args() -> list:
     description = "description"
     price = "1.99"
     stock = 5
-    owner_id = uuid4()
+    owner_id = mock_user.id
     cat_name = "Category"
     cat_desc = "Cat desc"
     test_category = Category(name=cat_name, description=cat_desc)
@@ -36,6 +38,7 @@ class TestProductsLogs:
     def test_should_log_product_creation_successfully(self, product_args: list, create_service):
         args = product_args
         service, mock_repository, mock_logger = create_service
+        mock_user_service.get_user_by_id.return_value = mock_user
         service.create_product(*args)
         mock_logger.info.assert_called_once()
         assert "Product successfully created" in mock_logger.info.call_args[0][0]

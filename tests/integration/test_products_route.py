@@ -3,8 +3,10 @@ from uuid import UUID, uuid4
 
 from apps.categories.repository import CategoryRepository
 from apps.categories.service import CategoryService
-import pytest
+from apps.users.service import UserService
+from apps.users.repository import UserRepository
 from apps.products.repository import ProductRepository
+import pytest
 from apps.products.service import ProductService
 from tests.utils.timed_client import TimedClient
 
@@ -20,12 +22,20 @@ def timed_client(client):
 
 
 @pytest.fixture
-def create_product_parameters():
+def test_user():
+    repository = UserRepository()
+    service = UserService(repository, logger)
+    user = service.create_user("test user", "email@test.com", "Abc@1234", "usernameTest")
+    return user
+
+
+@pytest.fixture
+def create_product_parameters(test_user):
     title = "valid Title"
     description = "valid desctiprion"
     price = "1.99"
     stock = 5
-    owner_id = uuid4()
+    owner_id = test_user.id
 
     return title, description, price, stock, owner_id
 
@@ -59,14 +69,14 @@ def create_test_product(create_product_parameters, create_test_category):
 
 @pytest.mark.django_db
 class TestCreateProduct:
-    def test_should_create_product_successfully(self, timed_client, create_test_category):
+    def test_should_create_product_successfully(self, timed_client, create_test_category, test_user):
         test_category = create_test_category()
         valid_payload = {
             "title": "valid Title",
             "description": "valid description",
             "price": "1.99",
             "stock": 3,
-            "owner_id": str(uuid4()),
+            "owner_id": str(test_user.id),
             "categories": [str(test_category.id)],
         }
 
@@ -94,7 +104,7 @@ class TestCreateProduct:
 @pytest.mark.django_db
 class TestGetProductbyId:
     def test_should_get_product_by_id_successfully(
-        self, timed_client, create_test_product
+        self, timed_client, create_test_product, test_user
     ):
         existing_product = create_test_product
 
@@ -109,7 +119,7 @@ class TestGetProductbyId:
         assert body["description"] == existing_product.description.text
         assert body["price"] == str(existing_product.price.value)
         assert body["stock"] == existing_product.stock.value
-        assert body["owner_id"] == str(existing_product.owner_id)
+        assert body["owner_id"] == str(test_user.id)
         assert body["categories"][0]["id"] == str(existing_product.categories[0].id)
         assert body["categories"][0]["name"] == str(existing_product.categories[0].name)
         assert body["categories"][0]["description"] == str(existing_product.categories[0].description)

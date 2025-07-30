@@ -8,16 +8,18 @@ from apps.shared.exceptions import NotFoundError
 from apps.shared.value_objects import Description, Price, Stock, Title
 from apps.categories.service import CategoryService
 from apps.categories.repository import CategoryRepository
+from apps.users.service import UserService
+from apps.users.repository import UserRepository
 from utils.logger import configure_logger
 
 logger = configure_logger(__name__)
-category_repository = CategoryRepository()
 
 class ProductService:
-    def __init__(self, repository:ProductRepositoryInterface, logger: logging.Logger, category_service: CategoryService = None):
+    def __init__(self, repository:ProductRepositoryInterface, logger: logging.Logger, category_service: CategoryService = None, user_service: UserService = None):
         self.repository = repository
         self.logger = logger
-        self.category_service = category_service or CategoryService(category_repository, logger)
+        self.category_service = category_service or CategoryService(CategoryRepository(), logger)
+        self.user_service = user_service or UserService(UserRepository(), logger)
 
     def create_product(
             self,
@@ -28,12 +30,12 @@ class ProductService:
             owner_id: UUID,
             categories_ids: list[UUID]
     ) -> Product:
-        
+        user = self.user_service.get_user_by_id(owner_id)        
         title = Title(title)
         description = Description(description)
         price = Price(price)
         stock = Stock(stock)
-        owner_id = owner_id
+        owner_id = user.id
         categories = [self.category_service.get_category_by_id(uuid) for uuid in categories_ids]
         
         product = Product(
