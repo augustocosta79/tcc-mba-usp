@@ -9,7 +9,7 @@ class CategoryRepository(CategoryRepositoryInterface):
         category_data = CategoryModel.objects.create(
             id=category.id,
             name=category.name.value,
-            description=category.description.text,
+            description=category.description.value,
             created_at=category.created_at,
             updated_at=category.updated_at
         )
@@ -49,7 +49,7 @@ class CategoryRepository(CategoryRepositoryInterface):
         if not (category_data:=CategoryModel.objects.filter(id=category.id).first()):
             return None
         category_data.name = category.name.value
-        category_data.description = category.description.text
+        category_data.description = category.description.value
         category_data.save()
         return Category(
             name=Name(category_data.name),

@@ -10,4 +10,15 @@ from .address.street import Street
 from .address.street_number import StreetNumber
 from .address.complement import Complement
 
-__all__ = ["Name", "Email", "Password", "Price", "Stock", "Title", "Description", "Street", "StreetNumber", "Complement"]
+__all__ = [
+    "Name",
+    "Email",
+    "Password",
+    "Price",
+    "Stock",
+    "Title",
+    "Description",
+    "Street",
+    "StreetNumber",
+    "Complement"
+]

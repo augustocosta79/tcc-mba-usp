@@ -13,7 +13,7 @@ def assert_is_equal(saved_category, category):
     assert isinstance(saved_category.name, Name)
     assert saved_category.name.value == category.name.value
     assert isinstance(saved_category.description, Description)
-    assert saved_category.description.text == category.description.text
+    assert saved_category.description.value == category.description.value
     assert isinstance(saved_category.id, UUID)
     assert saved_category.created_at is not None
     assert saved_category.updated_at is not None
@@ -40,7 +40,7 @@ class TestCategoryService:
         service, mock_repository = service_and_repository
         mock_repository.save.return_value = category
 
-        saved_category = service.create_category(category.name.value, category.description.text)
+        saved_category = service.create_category(category.name.value, category.description.value)
 
         mock_repository.save.assert_called_once()
         assert_is_equal(saved_category, category)

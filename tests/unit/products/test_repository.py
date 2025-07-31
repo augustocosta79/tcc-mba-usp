@@ -76,7 +76,7 @@ class TestProductRepository:
         assert isinstance(saved_product.categories[0], Category)
         assert saved_product.categories[0].id == categories[0].id
         assert saved_product.categories[0].name.value == categories[0].name.value
-        assert saved_product.categories[0].description.text == categories[0].description.text
+        assert saved_product.categories[0].description.value == categories[0].description.value
         
 
     def test_should_get_product_by_id(self, create_product_and_repository):
@@ -118,7 +118,7 @@ class TestProductRepository:
         updated_product = repository.update_product(product)
         assert isinstance(updated_product, Product)
         assert updated_product.title == Title(new_title)
-        assert updated_product.title.text == new_title
+        assert updated_product.title.value == new_title
         assert updated_product.id == product.id
         assert updated_product.updated_at > product.updated_at
 
@@ -126,7 +126,7 @@ class TestProductRepository:
         product.change_description(new_description)
         updated_product = repository.update_product(product)
         assert updated_product.description == Description(new_description)
-        assert updated_product.description.text == new_description
+        assert updated_product.description.value == new_description
         assert updated_product.updated_at > product.updated_at
 
         new_price = "2.99"
@@ -148,7 +148,7 @@ class TestProductRepository:
         updated_product = repository.update_product(product)
         assert updated_product.categories[0].id == new_category.id
         assert updated_product.categories[0].name.value == new_category.name.value
-        assert updated_product.categories[0].description.text == new_category.description.text
+        assert updated_product.categories[0].description.value == new_category.description.value
         assert updated_product.updated_at > product.updated_at
 
         product.deactivate()

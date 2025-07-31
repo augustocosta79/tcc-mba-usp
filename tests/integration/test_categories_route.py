@@ -54,7 +54,7 @@ class TestListCategories:
         assert isinstance(body, list)
         assert_has_valid_id(body[0])
         assert body[0]["name"] == test_category.name.value
-        assert body[0]["description"] == test_category.description.text
+        assert body[0]["description"] == test_category.description.value
         assert_has_valid_timestamps(body[0])
 
 
@@ -69,7 +69,7 @@ class TestGetCategoryById:
 
         assert_has_valid_id(body)
         assert body["name"] == test_category.name.value
-        assert body["description"] == test_category.description.text
+        assert body["description"] == test_category.description.value
         assert_has_valid_timestamps(body)
 
 

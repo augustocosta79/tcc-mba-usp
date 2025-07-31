@@ -1,23 +1,12 @@
-class Description:
-    def __init__(self, text: str):
-        self.text = text
-        self.validate()
+from apps.shared.value_objects.base import StringVO
 
-    def validate(self):
-        if not isinstance(self.text, str):
+class Description(StringVO):
+    def _validate(self):
+        if not isinstance(self.value, str):
             raise ValueError("Description text must be a string")
         
-        if not self.text.strip():
+        if not self.value.strip():
             raise ValueError("Descritption must not be empty or just white spaces")
         
-        if len(self.text) < 5:
+        if len(self.value) < 5:
             raise ValueError("Description must have at least five characters")
-        
-    def __str__(self):
-        return self.text
-    
-    def __eq__(self, other_description):
-        return isinstance(other_description, Description) and self.text == other_description.text
-    
-    def __hash__(self):
-        return hash(self.text)

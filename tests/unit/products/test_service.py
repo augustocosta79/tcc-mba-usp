@@ -118,7 +118,7 @@ class TestProductService:
         assert isinstance(retrieved_product, Product)
         assert isinstance(retrieved_product.id, UUID)
         assert isinstance(retrieved_product.title, Title)
-        assert retrieved_product.title.text == title
+        assert retrieved_product.title.value == title
         assert retrieved_product.description == Description(description)
         assert retrieved_product.price == Price(price)
         assert retrieved_product.stock == Stock(stock)

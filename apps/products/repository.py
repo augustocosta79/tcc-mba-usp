@@ -9,8 +9,8 @@ class ProductRepository(ProductRepositoryInterface):
     def save(self, product: Product) -> Product:
         saved_product = ProductModel.objects.create(
             id=product.id,
-            title=product.title.text,
-            description=product.description.text,
+            title=product.title.value,
+            description=product.description.value,
             price=product.price.value,
             stock=product.stock.value,
             owner=UserModel.objects.get(id=product.owner_id),
@@ -39,8 +39,8 @@ class ProductRepository(ProductRepositoryInterface):
         if not product_data:
             return None
 
-        product_data.title = product.title.text
-        product_data.description = product.description.text
+        product_data.title = product.title.value
+        product_data.description = product.description.value
         product_data.price = product.price.value
         product_data.stock = product.stock.value
         product_data.is_active = product.is_active

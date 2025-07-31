@@ -12,7 +12,7 @@ def assert_is_equal(saved_category, category):
     assert isinstance(saved_category.name, Name)
     assert isinstance(saved_category.description, Description)
     assert saved_category.name.value == category.name.value
-    assert saved_category.description.text == category.description.text
+    assert saved_category.description.value == category.description.value
     assert saved_category.id is not None
     assert isinstance(saved_category.id, UUID)
     assert saved_category.created_at is not None
@@ -60,7 +60,7 @@ class TestCategoryRepository:
 
         assert updated_category.id == saved_category.id
         assert updated_category.name.value == "new name"
-        assert updated_category.description.text == "new description"
+        assert updated_category.description.value == "new description"
         assert_is_equal(updated_category, saved_category)
 
     def test_should_delete_category_successfully(self, category_and_saved_category):

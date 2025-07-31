@@ -8,8 +8,8 @@ from apps.categories.serializers import category_model_to_entity
 def product_to_schema(product: Product) -> ProductSchema:
     return ProductSchema(
             id=product.id,
-            title=product.title.text,
-            description=product.description.text,
+            title=product.title.value,
+            description=product.description.value,
             price=str(product.price.value),
             stock=product.stock.value,
             owner_id=product.owner_id,

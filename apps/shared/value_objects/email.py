@@ -1,24 +1,14 @@
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
+from apps.shared.value_objects.base import StringVO
 import re
 
 EMAIL_REGEX = r"^[\w\.-]+@[\w\.-]+\.\w+$"
 
-class Email:
+class Email(StringVO):
     def __init__(self, value: str):
-        self.value = value.strip().lower()
-        self._validate()
+        value = value.strip().lower()
+        super().__init__(value)
 
     def _validate(self):
         
         if not re.match(EMAIL_REGEX, self.value):
             raise ValueError("Insira um email válido")
-        
-    def __str__(self):
-        return self.value
-    
-    def __eq__(self, other):
-        return other.value == self.value and isinstance(other, Email)
-    
-    def __hash__(self):
-        return hash(self.value)

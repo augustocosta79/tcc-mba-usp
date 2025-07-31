@@ -7,7 +7,7 @@ class TestTitle:
         title = Title(title_string)
 
         assert isinstance(title, Title)
-        assert title.text == title_string
+        assert title.value == title_string
 
 
     def test_should_raise_value_error_for_less_than_two_char_string(self):

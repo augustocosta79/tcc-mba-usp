@@ -8,7 +8,7 @@ def category_to_schema(category: Category) -> CategorySchema:
     return CategorySchema(
         id=category.id,
         name=category.name.value,
-        description=category.description.text,
+        description=category.description.value,
         created_at=category.created_at,
         updated_at=category.updated_at,
     )
@@ -18,7 +18,7 @@ def category_to_nested_schema(category: Category) -> CategoryNestedSchema:
     return CategoryNestedSchema(
             id=category.id,
             name=category.name.value,
-            description=category.description.text,
+            description=category.description.value,
         )
 
 def category_model_to_entity(category_model: CategoryModel) -> Category:

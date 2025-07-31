@@ -95,7 +95,7 @@ class TestCreateProduct:
         assert body["owner_id"] == valid_payload["owner_id"]
         assert body["categories"][0]["id"] == str(test_category.id)
         assert body["categories"][0]["name"] == test_category.name.value
-        assert body["categories"][0]["description"] == test_category.description.text
+        assert body["categories"][0]["description"] == test_category.description.value
         assert "created_at" in body
         assert "updated_at" in body
         assert_has_valid_timestamps(body)
@@ -115,8 +115,8 @@ class TestGetProductbyId:
         body = response.json()
 
         assert body["id"] == str(existing_product.id)
-        assert body["title"] == existing_product.title.text
-        assert body["description"] == existing_product.description.text
+        assert body["title"] == existing_product.title.value
+        assert body["description"] == existing_product.description.value
         assert body["price"] == str(existing_product.price.value)
         assert body["stock"] == existing_product.stock.value
         assert body["owner_id"] == str(test_user.id)
@@ -173,7 +173,7 @@ class TestUpdateProduct:
 
         assert body["id"] == str(product.id)
         assert body["title"] == title_payload["title"]
-        assert body["description"] == product.description.text
+        assert body["description"] == product.description.value
         assert body["price"] == str(product.price.value)
         assert body["stock"] == product.stock.value
         assert body["owner_id"] == str(product.owner_id)

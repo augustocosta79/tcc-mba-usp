@@ -7,7 +7,7 @@ class TestDescription:
         description = Description(description_string)
 
         assert isinstance(description, Description)
-        assert description.text == description_string
+        assert description.value == description_string
 
     def test_should_raise_value_error_for_under_five_char_string(self):
         with pytest.raises(ValueError) as exc:
