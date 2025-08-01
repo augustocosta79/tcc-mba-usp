@@ -1,43 +1,67 @@
-# from unittest.mock import MagicMock
+from unittest.mock import MagicMock
+from uuid import UUID
 
-# import pytest
-# from apps.addresses.service import AddressService
+import pytest
+from apps.addresses.entity import Address
+from apps.addresses.service import AddressService
+from apps.shared.value_objects.address import Street, StreetNumber, Complement, District, City, StateCode, PostalCode, Country
 
-# mock_repository = MagicMock()
-# mock_logger = MagicMock()
-# mock_user = MagicMock()
-# mock_user_service = MagicMock()
-# service = AddressService(mock_repository, mock_logger, mock_user_service)
+mock_repository = MagicMock()
+mock_logger = MagicMock()
+mock_user = MagicMock()
+mock_user_service = MagicMock()
+service = AddressService(mock_repository, mock_logger, mock_user_service)
 
-# mock_user_service.get_user_by_id.return_value = mock_user
+mock_user_service.get_user_by_id.return_value = mock_user
 
-# class TestAddress:
-#     def test_should_create_address_successfully(self):
-        
-#         user_id = mock_user.id
-#         street = "Rua Humberto de Campos"
-#         number = 0
-#         complement = 0
-#         district = "Leblon"
-#         city = "Rio de janeiro"
-#         state = "RJ"
-#         postal_code = "22430-190"
-#         country = "Brasil"
-#         is_default = True
+class TestAddress:
+    def test_should_create_address_successfully(self):        
+        user_id = mock_user.id
+        street_str = "Rua Humberto de Campos"
+        street_number_str = "0"
+        complement_str = "0"
+        district_str = "Leblon"
+        city_str = "Rio de janeiro"
+        state_code_str = "RJ"
+        postal_code_str = "22430-190"
+        country_str = "BR"
+        is_default = True
 
-#         address = service.create_address(user_id, street, number, complement, district, city, state, postal_code, country, is_default)
+        street = Street(street_str)
+        street_number = StreetNumber(street_number_str)
+        complement = Complement(complement_str)
+        district = District(district_str)
+        city = City(city_str)
+        state_code = StateCode(state_code_str)
+        postal_code = PostalCode(postal_code_str)
+        country = Country(country_str)
 
-#         assert address.street.value == street
-#         assert address.number.value == number
-#         assert address.complement.value == complement
-#         assert address.district.value == district
-#         assert address.city.value == city
-#         assert address.state.value == state
-#         assert address.postal_code.value == postal_code
-#         assert address.country.value == country
-#         assert address.is_default is True
+        test_address = Address(user_id, street, street_number, complement, district, city,state_code, postal_code, country, is_default)
 
+        mock_repository.save.return_value = test_address
 
+        address = service.create_address(
+            user_id,
+            street_str,
+            street_number_str,
+            complement_str,
+            district_str,
+            city_str,
+            state_code_str,
+            postal_code_str,
+            country_str,
+            is_default
+        )
 
-
-
+        assert address.street.value == street.value
+        assert address.street_number.value == street_number.value
+        assert address.complement.value == complement.value
+        assert address.district.value == district.value
+        assert address.city.value == city.value
+        assert address.state_code.value == state_code.value
+        assert address.postal_code.value == postal_code.value
+        assert address.country.value == country.value
+        assert isinstance(address.id, UUID)
+        assert address.is_default is True
+        mock_logger.info.assert_called_once()
+        assert "Address created successfully" in mock_logger.info.call_args[0][0]
