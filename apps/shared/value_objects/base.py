@@ -5,7 +5,7 @@
 
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import Union
+from typing import Any, Union
 
 
 class StringVO(ABC):
@@ -16,6 +16,12 @@ class StringVO(ABC):
     @abstractmethod
     def _validate(self):
         pass
+
+    
+    def _clean(self, raw_value: Any, *, error_msg: str) -> str:
+        if not isinstance(raw_value, str):
+            raise ValueError(error_msg)
+        return raw_value
 
     def __str__(self): # para poder imprimir o valor
         return self.value

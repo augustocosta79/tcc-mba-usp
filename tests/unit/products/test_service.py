@@ -14,6 +14,7 @@ from apps.categories.entity import Category
 mock_category_service = MagicMock()
 mock_user_service = MagicMock()
 mock_user = MagicMock()
+mock_logger = MagicMock()
 
 cat_name = "Category"
 cat_desc = "Cat desc"
@@ -57,7 +58,6 @@ def test_product(product_args):
 @pytest.fixture
 def mock_repository_and_service():
     mock_repository = MagicMock()
-    mock_logger = MagicMock()
     service = ProductService(mock_repository, mock_logger, mock_category_service, mock_user_service)
     return mock_repository, service
 
@@ -102,7 +102,9 @@ class TestProductService:
         assert product.is_active is True
         assert product.created_at is not None
         assert product.updated_at is not None
-        mock_repository.save.assert_called_once
+        mock_repository.save.assert_called_once()
+        mock_logger.info.assert_called_once()
+        assert "Product successfully created" in mock_logger.info.call_args[0][0]
 
     def test_should_get_product_by_id_successfully(
         self, product_args, test_product, mock_repository_and_service

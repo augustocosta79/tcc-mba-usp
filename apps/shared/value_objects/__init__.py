@@ -9,6 +9,11 @@ from .description import Description
 from .address.street import Street
 from .address.street_number import StreetNumber
 from .address.complement import Complement
+from .address.district import District
+from .address.city import City
+from .address.state_code import StateCode
+from .address.postal_code import PostalCode
+from .address.country import Country
 
 __all__ = [
     "Name",
@@ -20,5 +25,10 @@ __all__ = [
     "Description",
     "Street",
     "StreetNumber",
-    "Complement"
+    "Complement",
+    "District",
+    "City",
+    "StateCode",
+    "PostalCode",
+    "Country"
 ]
