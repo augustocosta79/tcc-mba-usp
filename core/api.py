@@ -1,6 +1,6 @@
 from ninja import NinjaAPI, Redoc
 from http import HTTPStatus
-from apps.shared.exceptions.exceptions import NotFoundError, ConflictError, UnauthorizedError
+from apps.shared.exceptions.exceptions import NotFoundError, ConflictError, UnauthorizedError, UnprocessableEntityError
 
 from apps.authentication.api import authentication_router
 from apps.users.api import users_router
@@ -46,3 +46,12 @@ def unauthorized_handler(request, exc: UnauthorizedError):
         {"message": str(exc)},
         status=HTTPStatus.UNAUTHORIZED,
     )
+
+@api.exception_handler(UnprocessableEntityError)
+def unprocessable_entity_handler(request, exc: UnprocessableEntityError):
+    return api.create_response(
+        request,
+        {"message": str(exc)},
+        status=HTTPStatus.UNPROCESSABLE_ENTITY,
+    )
+

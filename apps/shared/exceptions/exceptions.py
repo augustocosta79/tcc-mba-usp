@@ -10,3 +10,6 @@ class ConflictError(DomainError):
 
 class UnauthorizedError(DomainError):
     pass
+
+class UnprocessableEntityError(DomainError):
+    pass

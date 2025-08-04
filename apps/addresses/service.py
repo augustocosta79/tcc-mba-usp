@@ -16,6 +16,8 @@ from apps.shared.value_objects import (
 from apps.users.repository import UserRepository
 from apps.users.service import UserService
 from utils.logger import configure_logger
+from apps.addresses.validations.validators import validate_postal_code
+from apps.shared.exceptions import UnprocessableEntityError
 
 logger = configure_logger(__name__)
 
@@ -52,6 +54,20 @@ class AddressService:
         state_code = StateCode(state_code_str)
         postal_code = PostalCode(postal_code_str)
         country = Country(country_str)
+
+        is_valid_address_data = validate_postal_code(
+            street.value,
+            street_number.value,
+            complement.value,
+            district.value,
+            city.value,
+            state_code.value,
+            postal_code.value,
+            country.value,
+        )
+
+        if not is_valid_address_data:
+            raise UnprocessableEntityError("Unprocessable address. The address data does not match the postal code.")
 
         user = self.user_service.get_user_by_id(user_id)
 
