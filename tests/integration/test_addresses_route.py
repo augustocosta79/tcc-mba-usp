@@ -8,6 +8,7 @@ from apps.shared.value_objects.address import Street, StreetNumber, Complement, 
 from apps.addresses.repository import AddressRepository
 from utils.logger import configure_logger
 
+address_repository = AddressRepository()
 logger = configure_logger(__name__)
 
 @pytest.fixture
@@ -22,8 +23,7 @@ def test_user():
     return user
 
 @pytest.fixture
-def persisted_address(test_user):       
-    repository = AddressRepository()
+def persist_address(test_user):       
     address = Address(
         user_id=test_user.id,
         street=Street("Rua Humberto de Campos"),
@@ -36,7 +36,7 @@ def persisted_address(test_user):
         country=Country("BR"),
         is_default=True
     )
-    return repository.save(address)
+    return address_repository.save(address)
 
 
 @pytest.mark.django_db
@@ -108,8 +108,8 @@ class TestAddressCreationRoute:
         assert response.status_code == 409
         assert "address must have a user associated" in response.json()["message"]
     
-    def test_should_respond_409_conflict_error_for_more_than_one_default_address(self, timed_client, test_user, persisted_address):
-        address_default = persisted_address # create a existing default addredd
+    def test_should_respond_409_conflict_error_for_more_than_one_default_address(self, timed_client, test_user, persist_address):
+        persist_address # create a existing default addredd
         inconsistent_address_payload = {
             "user_id": str(test_user.id),
             "street": "Rua Humberto de Campos",
@@ -127,3 +127,71 @@ class TestAddressCreationRoute:
         response = timed_client.post(url, data=inconsistent_address_payload, content_type="application/json")
         assert response.status_code == 409
         assert "can only be one default address" in response.json()["message"]
+
+
+@pytest.mark.django_db
+class TestGetAddressByIdRoute:
+    def test_should_respond_200_ok(self, timed_client, persist_address):
+        persisted_address = persist_address
+        url = f"/api/addresses/{persisted_address.id}"
+        response = timed_client.get(url)
+        assert response.status_code == 200
+
+        body = response.json()
+        assert body["street"] == persisted_address.street.value
+        assert body["street_number"] == persisted_address.street_number.value
+        assert body["complement"] == persisted_address.complement.value
+        assert body["district"] == persisted_address.district.value
+        assert body["city"] == persisted_address.city.value
+        assert body["state_code"] == persisted_address.state_code.value
+        assert body["postal_code"] == persisted_address.postal_code.value
+        assert body["country"] == persisted_address.country.value
+        assert body["is_default"] == persisted_address.is_default
+
+    def test_should_respond_404_not_found(self, timed_client):
+        url = f"/api/addresses/{uuid4()}"
+        response = timed_client.get(url)
+        assert response.status_code == 404
+        assert "Address not found" in response.json()["message"] 
+
+
+@pytest.mark.django_db
+class TestListAddressesByUser:
+    def test_should_respond_200_ok(self, timed_client, test_user, persist_address):
+        url = f"/api/addresses/user/{test_user.id}"
+        persisted_address = persist_address
+        response = timed_client.get(url)
+        assert response.status_code == 200
+
+        body = response.json()
+        assert isinstance(body, list)
+        assert len(body) == 1
+        assert body[0]["street"] == persisted_address.street.value
+        assert body[0]["street_number"] == persisted_address.street_number.value
+        assert body[0]["complement"] == persisted_address.complement.value
+        assert body[0]["district"] == persisted_address.district.value
+        assert body[0]["city"] == persisted_address.city.value
+        assert body[0]["state_code"] == persisted_address.state_code.value
+        assert body[0]["postal_code"] == persisted_address.postal_code.value
+        assert body[0]["country"] == persisted_address.country.value
+        assert body[0]["is_default"] == persisted_address.is_default
+
+    def test_should_respond_404_for_invalid_user_id(self, timed_client, test_user, persist_address):
+        persist_address
+        url = f"/api/addresses/user/{uuid4()}"
+        response = timed_client.get(url)
+        assert response.status_code == 404
+        assert "No address associated for this user" in response.json()["message"]
+
+@pytest.mark.django_db
+class TestDeleteAddress:
+    def test_should_respond_204_if_delete_address_or_404_if_not_found(self, timed_client, persist_address):
+        persisted_address = persist_address
+        url=f"/api/addresses/{persisted_address.id}"
+        response_204 = timed_client.delete(url)
+        assert response_204.status_code == 204
+        assert address_repository.get_address_by_id(persisted_address.id) is None
+
+        response_404 = timed_client.delete(url)
+        assert response_404.status_code == 404
+        assert "Address not found" in response_404.json()["message"]

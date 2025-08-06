@@ -27,3 +27,22 @@ class AddressRepository(AddressRepositoryInterface):
     
     def has_default_address_for(self, user_id) -> bool:
         return AddressModel.objects.filter(user__id=user_id, is_default=True).exists()
+    
+    def get_address_by_id(self, address_id):
+        address_model = AddressModel.objects.filter(id=address_id).first()
+        if not address_model:
+            return None
+        return from_address_model_to_entity(address_model)
+    
+    def list_addresses_for(self, user_id):
+        addresses = AddressModel.objects.filter(user__id=user_id)
+        return [
+            from_address_model_to_entity(address_model)
+            for address_model in addresses
+        ]
+    
+    def delete_address(self, address_id):
+        address_model = AddressModel.objects.filter(id=address_id).first()
+        if not address_model:
+            return None
+        address_model.delete()

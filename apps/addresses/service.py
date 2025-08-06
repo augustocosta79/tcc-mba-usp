@@ -96,3 +96,29 @@ class AddressService:
         saved_address = self.repository.save(address)
         self.logger.info(f"Address created successfully: {saved_address}")
         return saved_address
+    
+    def get_address_by_id(self, address_id: UUID) -> Address:
+        if not (address:=self.repository.get_address_by_id(address_id)):
+            self.logger.warning(f"Address not found. Can't find address with id {address_id}")
+            raise NotFoundError(f"Address not found. Can't find address with id {address_id}")
+        self.logger.info("Address retrieved successfully")
+        return address
+    
+    def list_addresses_for(self, user_id: UUID):
+        try:
+            user = self.user_service.get_user_by_id(user_id)
+        except NotFoundError:
+            self.logger.warning("No address associated for this user.")
+            raise NotFoundError("No address associated for this user.")
+
+        self.logger.info("Address list retrieved successfully")
+        return self.repository.list_addresses_for(user.id)
+    
+    def delete_address(self, address_id: UUID):
+        address = self.repository.get_address_by_id(address_id)
+        if not address:
+            self.logger.warning(f"Address not found. Can't find address with id {address_id}")
+            raise NotFoundError(f"Address not found. Can't find address with id {address_id}")
+        self.repository.delete_address(address.id)
+        self.logger.info("Address deleted successfully")
+        return

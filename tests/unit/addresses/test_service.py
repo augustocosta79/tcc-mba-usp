@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from apps.addresses.entity import Address
@@ -224,6 +224,7 @@ class TestAddressCreation:
         assert "address must have a user associated" in str(exc)
         assert mock_logger.warning.called_once()
         assert "address must have a user associated" in mock_logger.warning.call_args[0][0]
+        mock_user_service.get_user_by_id.side_effect = None
 
     @pytest.mark.parametrize(
         (
@@ -253,7 +254,6 @@ class TestAddressCreation:
         mock_logger.reset_mock()      
         user_id = mock_user.id
         
-        mock_user_service.get_user_by_id.side_effect = None
         mock_user_service.get_user_by_id.return_value = mock_user
         mock_repository.has_default_address_for.return_value = True
 
@@ -274,3 +274,86 @@ class TestAddressCreation:
         assert mock_logger.warning.called_once()
         assert "one default address per user" in mock_logger.warning.call_args[0][0]
 
+class TestGetAddressById:
+    def test_should_get_address_by_id_successfully(self, create_test_address):
+        user_id = mock_user.id
+        street_str = "Rua Humberto de Campos"
+        street_number_str = "0"
+        complement_str = "0"
+        district_str = "Leblon"
+        city_str = "Rio de janeiro"
+        state_code_str = "RJ"
+        postal_code_str = "22430190"
+        country_str = "BR"
+        is_default = True
+
+        test_address = create_test_address(user_id, street_str, street_number_str, complement_str, district_str,
+        city_str, state_code_str, postal_code_str, country_str, is_default)
+
+        mock_repository.get_address_by_id.return_value = test_address        
+       
+        address = service.get_address_by_id(test_address.id)
+
+        assert address.street.value == test_address.street.value
+        assert address.street_number.value == test_address.street_number.value
+        assert address.complement.value == test_address.complement.value
+        assert address.district.value == test_address.district.value
+        assert address.city.value == test_address.city.value
+        assert address.state_code.value == test_address.state_code.value
+        assert address.postal_code.value == test_address.postal_code.value
+        assert address.country.value == test_address.country.value
+        assert isinstance(address.id, UUID)
+        assert address.is_default is True
+        mock_logger.info.assert_called_once()
+        assert "Address retrieved successfully" in mock_logger.info.call_args[0][0]
+
+    def test_should_raise_not_found_error_for_invalid_address_id(self):
+        mock_logger.reset_mock()
+        mock_repository.get_address_by_id.return_value = None
+        with pytest.raises(NotFoundError) as exc:
+            service.get_address_by_id(uuid4())
+        assert "Address not found" in str(exc)
+        mock_logger.warning.assert_called_once()
+        assert "Address not found" in mock_logger.warning.call_args[0][0]
+
+class TestListAddressesForUser:
+    def test_should_list_addresses_successfully_for_valid_user_id(self, create_test_address):
+        mock_repository.list_addresses_for.return_value = [ create_test_address ]
+        addresses = service.list_addresses_for(mock_user.id)
+        assert len(addresses) == 1
+        mock_logger.info.assert_called_once()
+        assert "Address list retrieved successfully" in mock_logger.info.call_args[0][0]
+    
+    def test_should_raise_not_found_error_for_invalid_user_id(self):
+        mock_logger.reset_mock()
+        mock_user_service.get_user_by_id.side_effect = NotFoundError("No address associated for this user")
+        with pytest.raises(NotFoundError) as exc:
+            service.list_addresses_for(uuid4())
+        assert "No address associated for this user" in str(exc)
+        mock_logger.warning.assert_called_once()
+        assert "No address associated for this user" in mock_logger.warning.call_args[0][0]
+
+        mock_user_service.get_user_by_id.side_effect = None
+
+class TestDeleteAddress:
+    def test_should_delete_address_successfully(self):
+        mock_address = MagicMock()
+        mock_repository.get_address_by_id.return_value = mock_address
+
+        service.delete_address(mock_address.id)
+        
+        mock_repository.delete_address.assert_called_once_with(mock_address.id)
+        mock_logger.info.assert_called_once()
+        assert "Address deleted successfully" in mock_logger.info.call_args[0][0]
+    
+    def test_should_raise_not_found_error_for_invalid_address_id(self):
+        mock_logger.reset_mock()
+        mock_repository.get_address_by_id.return_value = None
+        random_id = uuid4()
+
+        with pytest.raises(NotFoundError) as exc:
+            service.delete_address(random_id)
+        
+        assert f"Address not found. Can't find address with id {random_id}" in str(exc)
+        mock_logger.warning.assert_called_once()
+        assert f"Address not found. Can't find address with id {random_id}" in mock_logger.warning.call_args[0][0]

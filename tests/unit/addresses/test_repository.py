@@ -1,4 +1,4 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 from apps.addresses.entity import Address
 from apps.shared.value_objects.address import Street, StreetNumber, Complement, District, City, StateCode, PostalCode, Country
 from apps.addresses.repository import AddressRepository
@@ -37,24 +37,28 @@ def test_user():
     user = service.create_user("test user", "email@test.com", "Abc@1234", "usernameTest")
     return user
 
+@pytest.fixture
+def get_saved_address(test_user):
+    address = Address(
+        user_id=test_user.id,
+        street=street,
+        street_number=street_number,
+        complement=complement,
+        district=district,
+        city=city,
+        state_code=state_code,
+        postal_code=postal_code,
+        country=country,
+        is_default=is_default
+    )
+
+    return repository.save(address)
+
 
 @pytest.mark.django_db
-class TestAddress:
-    def test_repository_should_save_address_successfully(self, test_user):
-        address = Address(
-            user_id=test_user.id,
-            street=street,
-            street_number=street_number,
-            complement=complement,
-            district=district,
-            city=city,
-            state_code=state_code,
-            postal_code=postal_code,
-            country=country,
-            is_default=is_default
-        )
-
-        saved_address = repository.save(address)
+class TestAddressCreation:
+    def test_repository_should_save_address_successfully(self, test_user, get_saved_address):
+        saved_address = get_saved_address
         
         assert saved_address is not None
         assert saved_address.street == street
@@ -102,3 +106,54 @@ class TestAddress:
         repository.save(address2)
 
         assert repository.has_default_address_for(test_user.id) is True
+
+@pytest.mark.django_db
+class TestGetAddressById:
+    def test_should_return_address_by_id_successfully_for_valid_address_id(self, get_saved_address):
+        saved_address = get_saved_address
+        address = repository.get_address_by_id(saved_address.id)
+
+        assert saved_address.id == address.id
+        assert saved_address.street == address.street
+        assert saved_address.street_number == address.street_number
+        assert saved_address.complement == address.complement
+        assert saved_address.district == address.district
+        assert saved_address.city == address.city
+        assert saved_address.state_code == address.state_code
+        assert saved_address.postal_code == address.postal_code
+        assert saved_address.country == address.country
+        assert saved_address.is_default == address.is_default
+        assert saved_address.user_id == address.user_id
+
+    def test_should_return_None_for_invalid_address_id(self):
+        assert repository.get_address_by_id(uuid4()) is None
+
+
+@pytest.mark.django_db
+class TestListAddressesForUser:
+    def test_should_get_user_addresses_for_valid_user_successfully(self, test_user, get_saved_address):
+        address = get_saved_address
+        addresses = repository.list_addresses_for(test_user.id)
+        assert len(addresses) == 1
+
+        saved_address = addresses[0]
+
+        assert saved_address.id == address.id
+        assert saved_address.street == address.street
+        assert saved_address.street_number == address.street_number
+        assert saved_address.complement == address.complement
+        assert saved_address.district == address.district
+        assert saved_address.city == address.city
+        assert saved_address.state_code == address.state_code
+        assert saved_address.postal_code == address.postal_code
+        assert saved_address.country == address.country
+        assert saved_address.is_default == address.is_default
+        assert saved_address.user_id == address.user_id
+
+@pytest.mark.django_db
+class TestDeleteAddress:
+    def test_should_delete_address_sccessfully(self, get_saved_address):
+        saved_address = get_saved_address
+        repository.delete_address(saved_address.id)
+        deleted_address = repository.get_address_by_id(saved_address.id)
+        assert deleted_address is None
