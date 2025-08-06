@@ -23,24 +23,14 @@ service = CategoryService(repository, logger)
 
 @categories_router.post("", response={HTTPStatus.CREATED: CategorySchema})
 def create_category(request, payload: CategoryCreateSchema):
-    try:
-        category = service.create_category(payload.name, payload.description or "")
-        return HTTPStatus.CREATED, category_to_schema(category)
-    except Exception as exc:
-        logger.error(f"Unexpected error on POST /categories: {str(exc)}")
-        traceback.print_exc()
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    category = service.create_category(payload.name, payload.description or "")
+    return HTTPStatus.CREATED, category_to_schema(category)
 
 
 @categories_router.get("", response={HTTPStatus.OK: list[CategorySchema]})
 def list_categories(request):
-    try:
-        categories = service.list_categories()
-        return [category_to_schema(category) for category in categories]
-    except Exception as exc:
-        logger.error(f"Unexpected error on GET /categories: {str(exc)}")
-        traceback.print_exc()
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    categories = service.list_categories()
+    return [category_to_schema(category) for category in categories]
 
 
 @categories_router.get(
@@ -48,13 +38,8 @@ def list_categories(request):
     response={HTTPStatus.OK: CategorySchema, HTTPStatus.NOT_FOUND: ErrorSchema},
 )
 def get_category_by_id(request, category_id: UUID):
-    try:
-        category = service.get_category_by_id(category_id)
-        return category_to_schema(category)
-    except Exception as exc:
-        logger.error(f"Unexpected error on GET /categories/{category_id}: {str(exc)}")
-        traceback.print_exc()
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    category = service.get_category_by_id(category_id)
+    return category_to_schema(category)
 
 
 @categories_router.patch(
@@ -62,13 +47,8 @@ def get_category_by_id(request, category_id: UUID):
     response={HTTPStatus.OK: CategorySchema, HTTPStatus.NOT_FOUND: ErrorSchema},
 )
 def update_category(request, category_id: UUID, payload: CategoryUpdateSchema):
-    try:
-        category = service.update_category(category_id, payload)
-        return category_to_schema(category)
-    except Exception as exc:
-        logger.error(f"Unexpected error on PATCH /categories/{category_id}: {str(exc)}")
-        traceback.print_exc()
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    category = service.update_category(category_id, payload)
+    return category_to_schema(category)
 
 
 @categories_router.delete(
@@ -78,12 +58,5 @@ def update_category(request, category_id: UUID, payload: CategoryUpdateSchema):
 def delete_category(request, category_id: UUID):
     if not (category := service.get_category_by_id(category_id)):
         raise HttpError(HTTPStatus.NOT_FOUND, "Category not found")
-    try:
-        service.delete_category(category.id)
-        return HTTPStatus.NO_CONTENT, None
-    except Exception as exc:
-        logger.error(
-            f"Unexpected error on DELETE /categories/{category_id}: {str(exc)}"
-        )
-        traceback.print_exc()
-        raise HttpError(HTTPStatus.INTERNAL_SERVER_ERROR, str(exc))
+    service.delete_category(category.id)
+    return HTTPStatus.NO_CONTENT, None

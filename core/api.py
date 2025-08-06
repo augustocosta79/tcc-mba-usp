@@ -1,6 +1,7 @@
 from ninja import NinjaAPI, Redoc
 from http import HTTPStatus
 from apps.shared.exceptions.exceptions import NotFoundError, ConflictError, UnauthorizedError, UnprocessableEntityError
+from utils.logger import configure_logger
 
 from apps.authentication.api import authentication_router
 from apps.users.api import users_router
@@ -25,6 +26,20 @@ api.add_router("/categories", categories_router, tags=["Categories"])
 api.add_router("/addresses", address_router, tags=["Addresses"])
 
 # Exception Handlers
+logger = configure_logger("api")
+
+api.exception_handler(Exception)
+def generic_exception_handler(request, exc: Exception):
+    logger.error(
+        f"Unhandled exception on {request.method} {request.path}: {exc}",
+        exc_info=True  # mostra stack trace completo
+    )
+    return api.create_response(
+        request,
+        {"message": "Internal server error"},
+        status=HTTPStatus.INTERNAL_SERVER_ERROR,
+    )
+
 @api.exception_handler(NotFoundError)
 def not_found_handler(request, exc: NotFoundError):
     return api.create_response(
