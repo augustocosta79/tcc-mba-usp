@@ -7,6 +7,7 @@ from apps.users.api import users_router
 from apps.healthz.api import healthz_router
 from apps.products.api import products_router
 from apps.categories.api import categories_router
+from apps.addresses.api import address_router
 
 api = NinjaAPI(
     csrf=False,
@@ -21,6 +22,7 @@ api.add_router("/users", users_router, tags=["Users"])
 api.add_router("/healthz", healthz_router, tags=["Healthz"])
 api.add_router("/products", products_router, tags=["Products"])
 api.add_router("/categories", categories_router, tags=["Categories"])
+api.add_router("/addresses", address_router, tags=["Addresses"])
 
 # Exception Handlers
 @api.exception_handler(NotFoundError)

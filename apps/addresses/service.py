@@ -17,7 +17,7 @@ from apps.users.repository import UserRepository
 from apps.users.service import UserService
 from utils.logger import configure_logger
 from apps.addresses.validations.validators import validate_postal_code
-from apps.shared.exceptions import UnprocessableEntityError
+from apps.shared.exceptions import UnprocessableEntityError, NotFoundError, ConflictError
 
 logger = configure_logger(__name__)
 
@@ -45,7 +45,7 @@ class AddressService:
         postal_code_str: str,
         country_str: str,
         is_default: bool,
-    ):
+    ) -> Address:
         street = Street(street_str)
         street_number = StreetNumber(street_number_value)
         complement = Complement(complement_str)
@@ -67,9 +67,18 @@ class AddressService:
         )
 
         if not is_valid_address_data:
+            self.logger.warning("Unprocessable address. The address data does not match the postal code.")
             raise UnprocessableEntityError("Unprocessable address. The address data does not match the postal code.")
+        
+        try:
+            user = self.user_service.get_user_by_id(user_id)
+        except NotFoundError:
+            self.logger.warning("Each address must have a user associated.")
+            raise ConflictError("Each address must have a user associated.")
 
-        user = self.user_service.get_user_by_id(user_id)
+        if is_default and self.repository.has_default_address_for(user_id):
+            self.logger.warning("There can only be one default address per user")
+            raise ConflictError("There can only be one default address per user")
 
         address = Address(
             user_id=user.id,
