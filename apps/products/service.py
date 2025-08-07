@@ -53,6 +53,7 @@ class ProductService:
     
     def get_product_by_id(self, product_id) -> Product:
         if not (product:=self.repository.get_product_by_id(product_id)):
+            self.logger.warning(f"Product with id {product_id} not found")
             raise NotFoundError(f"Product with id {product_id} not found")
         return product
     

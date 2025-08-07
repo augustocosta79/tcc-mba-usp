@@ -71,7 +71,7 @@ def update_product():
     return _update_product
 
 
-class TestProductService:
+class TestProductCreation:
     def test_should_create_product_with_valid_data(
         self, product_args, test_product, mock_repository_and_service
     ):
@@ -106,9 +106,11 @@ class TestProductService:
         mock_logger.info.assert_called_once()
         assert "Product successfully created" in mock_logger.info.call_args[0][0]
 
+class TestGetProductById:
     def test_should_get_product_by_id_successfully(
         self, product_args, test_product, mock_repository_and_service
     ):
+        mock_logger.reset_mock()
         title, description, price, stock, owner_id = product_args
 
         mock_repository, service = mock_repository_and_service
@@ -142,7 +144,11 @@ class TestProductService:
             service.get_product_by_id(uuid4())
 
         assert "not found" in str(exc)
+        mock_logger.warning.assert_called_once()
+        assert "not found" in mock_logger.warning.call_args[0][0]
 
+
+class TestListProductsByCategory:
     def test_should_list_products_by_category_successfully(
         self, product_args, test_product, mock_repository_and_service
     ):
@@ -155,6 +161,7 @@ class TestProductService:
         assert mock_repository.list_products_by_category.assert_called_once
         assert test_product in products
 
+class TestProductUpdate:
     def test_should_update_product(self, mock_repository_and_service, update_product):
         mock_repository, service = mock_repository_and_service
 
@@ -168,24 +175,40 @@ class TestProductService:
         mock_repository.get_product_by_id.assert_called_once_with(mock_product.id)
         mock_product.change_title.assert_called_once_with(title_payload["title"])
         mock_repository.update_product.assert_called_once_with(mock_product)
+        mock_logger.info.assert_called_once()
+        assert "Product successfully updated" in mock_logger.info.call_args[0][0]
+        mock_logger.reset_mock()
 
         description_payload = {"description": "new description"}
         update_product(service, mock_product.id, description_payload)
         mock_product.change_description.assert_called_once_with(
             description_payload["description"]
         )
+        mock_logger.info.assert_called_once()
+        assert "Product successfully updated" in mock_logger.info.call_args[0][0]
+        mock_logger.reset_mock()
 
         price_payload = {"price": "2.99"}
         update_product(service, mock_product.id, price_payload)
         mock_product.change_price.assert_called_once_with(price_payload["price"])
+        mock_logger.info.assert_called_once()
+        assert "Product successfully updated" in mock_logger.info.call_args[0][0]
+        mock_logger.reset_mock()
 
         stock_payload = {"stock": 3}
         update_product(service, mock_product.id, stock_payload)
         mock_product.change_stock.assert_called_once_with(stock_payload["stock"])
+        mock_logger.info.assert_called_once()
+        assert "Product successfully updated" in mock_logger.info.call_args[0][0]
+        mock_logger.reset_mock()
 
         category_payload = {"categories": [uuid4()]}
         update_product(service, mock_product.id, category_payload)
         mock_product.change_categories.assert_called_once()
+        mock_logger.info.assert_called_once()
+        assert "Product successfully updated" in mock_logger.info.call_args[0][0]
+        mock_logger.reset_mock()
+
 
     def test_should_raise_not_found_error_on_update_product_with_invalid_id(
         self, mock_repository_and_service, update_product
@@ -197,8 +220,11 @@ class TestProductService:
         with pytest.raises(NotFoundError) as exc:
             update_product(service, uuid4(), title_payload)
 
-        assert "not found" in str(exc)
+        assert "Product not found" in str(exc)
+        mock_logger.warning.assert_called_once()
+        assert "Product not found" in mock_logger.warning.call_args[0][0]
 
+class TestProductActivation:
     def test_should_activate_and_deactivate_product_successfully(
         self, mock_repository_and_service
     ):
@@ -210,16 +236,24 @@ class TestProductService:
 
         activate_payload = ProductActivationSchema(status=True)
         service.product_activation(mock_product.id, activate_payload)
-        mock_product.activate.assert_called_once
+        mock_product.activate.assert_called_once()
+        
+        mock_logger.info.assert_called_once()
+        assert "activated successfully" in mock_logger.info.call_args[0][0]
+        mock_logger.reset_mock()
 
         deactivate_payload = ProductActivationSchema(status=False)
         service.product_activation(mock_product.id, deactivate_payload)
-        mock_product.deactivate.assert_called_once
+        mock_product.deactivate.assert_called_once()
 
         mock_repository.get_product_by_id.assert_called_with(mock_product.id)
         mock_repository.update_product.assert_called_with(mock_product)
         assert mock_repository.get_product_by_id.call_count == 2
         assert mock_repository.update_product.call_count == 2
+        mock_logger.info.assert_called_once()
+        assert "deactivated successfully" in mock_logger.info.call_args[0][0]
+        mock_logger.reset_mock()
+
 
     def test_should_raise_not_found_error_on_deactivate_invalid_product_id(
         self, mock_repository_and_service
@@ -233,7 +267,10 @@ class TestProductService:
         with pytest.raises(NotFoundError) as exc:
             service.product_activation(uuid4(), activate_payload)
         assert "not found" in str(exc)
+        mock_logger.warning.assert_called_once()
+        assert "Product not found" in mock_logger.warning.call_args[0][0]
 
+class TestProductDeletion:
     def test_should_delete_product_successfully(self, mock_repository_and_service):
         mock_repository, service = mock_repository_and_service
         mock_product = MagicMock()
@@ -243,3 +280,18 @@ class TestProductService:
 
         mock_repository.get_product_by_id.assert_called_once_with(mock_product.id)
         mock_repository.delete_product.assert_called_once_with(mock_product)
+        mock_logger.info.assert_called_once()
+        assert "Product successfully deleted" in mock_logger.info.call_args[0][0]
+
+    def test_should_raise_not_found_error_to_delete_invalid_product_id(self, mock_repository_and_service):
+        mock_logger.reset_mock()
+        mock_repository, service = mock_repository_and_service
+        mock_repository.get_product_by_id.return_value = None
+
+        with pytest.raises(NotFoundError) as exc:
+            service.delete_product(uuid4())
+
+        mock_logger.warning.assert_called_once()
+        assert "Not found Product" in mock_logger.warning.call_args[0][0]
+        assert "not found" in str(exc)
+        

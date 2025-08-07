@@ -33,22 +33,24 @@ def service_and_repository():
     logger = MagicMock()
     service = CategoryService(repository, logger)
 
-    return service, repository
+    return service, repository, logger
 
 class TestCategoryService:
     def test_should_create_category_successfully(self, category, service_and_repository):
-        service, mock_repository = service_and_repository
+        service, mock_repository, mock_logger = service_and_repository
         mock_repository.save.return_value = category
 
         saved_category = service.create_category(category.name.value, category.description.value)
 
         mock_repository.save.assert_called_once()
         assert_is_equal(saved_category, category)
+        mock_logger.info.assert_called_once()
+        assert "Category successfully created" in mock_logger.info.call_args[0][0]
 
         
 
     def test_should_list_categories_successfully(self, category, service_and_repository):
-        service, mock_repository = service_and_repository
+        service, mock_repository, mock_logger = service_and_repository
 
         mock_repository.list_categories.return_value = [category]
         categories = service.list_categories()
@@ -58,7 +60,7 @@ class TestCategoryService:
         assert_is_equal(categories[0], category)
 
     def test_should_get_category_by_id_successfully(self, category, service_and_repository):
-        service, mock_repository = service_and_repository
+        service, mock_repository, mock_logger = service_and_repository
         mock_repository.get_category_by_id.return_value = category
         retrieved_category = service.get_category_by_id(category.id)
 
@@ -66,7 +68,7 @@ class TestCategoryService:
         assert_is_equal(retrieved_category, category)
     
     def test_should_fail_get_category_with_invalid_id(self, category, service_and_repository):
-        service, mock_repository = service_and_repository
+        service, mock_repository, mock_logger = service_and_repository
         mock_repository.get_category_by_id.return_value = None
         
         with pytest.raises(NotFoundError) as exc:
@@ -74,7 +76,7 @@ class TestCategoryService:
         assert "Category not found" in str(exc)
 
     def test_should_update_category_successfully(self, category, service_and_repository):
-        service, mock_repository = service_and_repository
+        service, mock_repository, mock_logger = service_and_repository
         mock_category = MagicMock()
         payload = CategoryUpdateSchema(
             name="new name",
@@ -88,9 +90,12 @@ class TestCategoryService:
         mock_category.rename.assert_called_once_with(payload.name)
         mock_category.update_description.assert_called_once_with(payload.description)
         mock_repository.update_category.assert_called_once_with(mock_category)
+
+        mock_logger.info.assert_called_once()
+        assert "Category successfully updated" in mock_logger.info.call_args[0][0]
     
     def test_should_fail_update_category_invalid_id(self, category, service_and_repository):
-        service, mock_repository = service_and_repository
+        service, mock_repository, mock_logger = service_and_repository
         payload = CategoryUpdateSchema(
             name="new name",
             description="new description"
@@ -100,16 +105,22 @@ class TestCategoryService:
         with pytest.raises(NotFoundError) as exc:
             service.update_category("invalid id", payload)
         assert "Category not found" in str(exc)
+        mock_logger.warning.assert_called_once()
+        assert "Category not found" in mock_logger.warning.call_args[0][0]
 
     def test_should_delete_category_successfully(self, category, service_and_repository):
-        service, mock_repository = service_and_repository
+        service, mock_repository, mock_logger = service_and_repository
         mock_repository.get_category_by_id.return_value = category
         service.delete_category(category.id)
         mock_repository.delete_category.assert_called_once_with(category.id)
+        mock_logger.info.assert_called_once()
+        assert "Category successfully deleted" in mock_logger.info.call_args[0][0]
     
     def test_should_fail_delete_category_invalid_id(self, category, service_and_repository):
-        service, mock_repository = service_and_repository
+        service, mock_repository, mock_logger = service_and_repository
         mock_repository.get_category_by_id.return_value = None
         with pytest.raises(NotFoundError) as exc:
             service.delete_category(category.id)
         assert "Category not found" in str(exc)
+        mock_logger.warning.assert_called_once()
+        assert "Category not found" in mock_logger.warning.call_args[0][0]

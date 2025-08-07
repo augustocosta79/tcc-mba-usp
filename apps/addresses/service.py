@@ -104,7 +104,7 @@ class AddressService:
         self.logger.info("Address retrieved successfully")
         return address
     
-    def list_addresses_for(self, user_id: UUID):
+    def list_addresses_for(self, user_id: UUID) -> list[Address]:
         try:
             user = self.user_service.get_user_by_id(user_id)
         except NotFoundError:
