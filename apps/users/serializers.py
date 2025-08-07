@@ -1,4 +1,4 @@
-from apps.users.user_entity import User
+from apps.users.entity import User
 from apps.users.schema import UserSchema
 
 def user_to_schema(user: User) -> UserSchema:

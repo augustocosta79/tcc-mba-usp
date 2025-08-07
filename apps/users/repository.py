@@ -1,7 +1,7 @@
 from uuid import UUID
 from apps.users.repository_interface import UserRepositoryInterface
 from apps.users.models import UserModel
-from apps.users.user_entity import User
+from apps.users.entity import User
 from apps.shared.value_objects import Name, Email, Password
 
 

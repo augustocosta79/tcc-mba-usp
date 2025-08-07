@@ -5,7 +5,7 @@ from apps.shared.value_objects import Name, Email, Password
 from apps.users.repository_interface import UserRepositoryInterface
 from apps.users.schema import UserUpdateSchema, UserActivationSchema
 from apps.shared.exceptions import ConflictError, UnauthorizedError, NotFoundError
-from apps.users.user_entity import User
+from apps.users.entity import User
 
 from utils.logger import configure_logger
 import logging

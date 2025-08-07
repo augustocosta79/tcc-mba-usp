@@ -7,7 +7,7 @@ from apps.shared.value_objects.email import Email
 from apps.shared.value_objects.name import Name
 from apps.shared.value_objects.password import Password
 from apps.users.service import UserService
-from apps.users.user_entity import User
+from apps.users.entity import User
 from apps.users.schema import UserUpdateSchema, UserActivationSchema
 from apps.shared.exceptions import UnauthorizedError, ConflictError, NotFoundError
 

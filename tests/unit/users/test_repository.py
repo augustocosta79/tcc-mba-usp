@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from apps.shared.value_objects import Email, Name, Password
 from apps.users.repository import UserRepository
-from apps.users.user_entity import User
+from apps.users.entity import User
 
 
 @pytest.fixture

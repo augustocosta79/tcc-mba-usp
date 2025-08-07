@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
-from apps.users.user_entity import User
+from apps.users.entity import User
 
 class UserRepositoryInterface(ABC):
     @abstractmethod
