@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     "apps.healthz",
     "apps.products",
     "apps.categories",
-    "apps.addresses"
+    "apps.addresses",
+    "apps.carts"
 ]
 
 MIDDLEWARE = [

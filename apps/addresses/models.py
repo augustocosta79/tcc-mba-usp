@@ -13,3 +13,6 @@ class AddressModel(models.Model):
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=2)
     is_default = models.BooleanField(default=False)
+
+    class Meta:
+        db_table="addresses"
