@@ -41,7 +41,7 @@ def persist_address(test_user):
 
 @pytest.mark.django_db
 class TestAddressCreationRoute:
-    def test_should_respond_status_201_created(self, timed_client, test_user):
+    def test_should_return_status_201_created(self, timed_client, test_user):
         address_payload = {
             "user_id": str(test_user.id),
             "street": "Rua Humberto de Campos",
@@ -70,7 +70,7 @@ class TestAddressCreationRoute:
         assert body["country"] == address_payload["country"]
         assert body["is_default"] == address_payload["is_default"]
 
-    def test_should_respond_422_unporcessable_entity_error(self, timed_client, test_user):
+    def test_should_return_422_unporcessable_entity_error_for_wrong_postal_code(self, timed_client, test_user):
         inconsistent_address_payload = {
             "user_id": str(test_user.id),
             "street": "Rua Humberto de Campos",
@@ -89,7 +89,7 @@ class TestAddressCreationRoute:
         assert response.status_code == 422
         assert "Unprocessable address" in response.json()["message"]
     
-    def test_should_respond_409_conflict_error_for_not_found_user(self, timed_client):
+    def test_should_return_409_conflict_error_for_not_found_user(self, timed_client):
         inconsistent_address_payload = {
             "user_id": str(uuid4()), # non existent user id
             "street": "Rua Humberto de Campos",
@@ -108,7 +108,7 @@ class TestAddressCreationRoute:
         assert response.status_code == 409
         assert "address must have a user associated" in response.json()["message"]
     
-    def test_should_respond_409_conflict_error_for_more_than_one_default_address(self, timed_client, test_user, persist_address):
+    def test_should_return_409_conflict_error_for_more_than_one_default_address(self, timed_client, test_user, persist_address):
         persist_address # create a existing default addredd
         inconsistent_address_payload = {
             "user_id": str(test_user.id),
@@ -131,7 +131,7 @@ class TestAddressCreationRoute:
 
 @pytest.mark.django_db
 class TestGetAddressByIdRoute:
-    def test_should_respond_200_ok(self, timed_client, persist_address):
+    def test_should_return_200_ok(self, timed_client, persist_address):
         persisted_address = persist_address
         url = f"/api/addresses/{persisted_address.id}"
         response = timed_client.get(url)
@@ -148,7 +148,7 @@ class TestGetAddressByIdRoute:
         assert body["country"] == persisted_address.country.value
         assert body["is_default"] == persisted_address.is_default
 
-    def test_should_respond_404_not_found(self, timed_client):
+    def test_should_return_404_not_found_for_invalid_address_id(self, timed_client):
         url = f"/api/addresses/{uuid4()}"
         response = timed_client.get(url)
         assert response.status_code == 404
@@ -157,7 +157,7 @@ class TestGetAddressByIdRoute:
 
 @pytest.mark.django_db
 class TestListAddressesByUser:
-    def test_should_respond_200_ok(self, timed_client, test_user, persist_address):
+    def test_should_return_200_ok(self, timed_client, test_user, persist_address):
         url = f"/api/addresses/user/{test_user.id}"
         persisted_address = persist_address
         response = timed_client.get(url)
@@ -176,7 +176,7 @@ class TestListAddressesByUser:
         assert body[0]["country"] == persisted_address.country.value
         assert body[0]["is_default"] == persisted_address.is_default
 
-    def test_should_respond_404_for_invalid_user_id(self, timed_client, test_user, persist_address):
+    def test_should_return_404_for_invalid_user_id(self, timed_client, test_user, persist_address):
         persist_address
         url = f"/api/addresses/user/{uuid4()}"
         response = timed_client.get(url)
@@ -185,7 +185,7 @@ class TestListAddressesByUser:
 
 @pytest.mark.django_db
 class TestDeleteAddress:
-    def test_should_respond_204_if_delete_address_or_404_if_not_found(self, timed_client, persist_address):
+    def test_should_return_204_if_delete_address_or_404_if_not_found(self, timed_client, persist_address):
         persisted_address = persist_address
         url=f"/api/addresses/{persisted_address.id}"
         response_204 = timed_client.delete(url)

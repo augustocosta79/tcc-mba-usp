@@ -21,7 +21,7 @@ def test_category():
 
 @pytest.mark.django_db
 class TestCreateCategory:
-    def test_should_create_category_successfully(self, timed_client):
+    def test_should_return_status_201_created_and_create_category_successfully(self, timed_client):
         url = "/api/categories"
 
         payload = {
@@ -44,7 +44,7 @@ class TestCreateCategory:
 
 @pytest.mark.django_db
 class TestListCategories:
-    def test_should_list_categories_successfully(self, timed_client, test_category):
+    def test_should_return_status_200_ok_and_list_categories_successfully(self, timed_client, test_category):
         url = "/api/categories"
         response = timed_client.get(url)
         assert response.status_code == 200
@@ -60,7 +60,7 @@ class TestListCategories:
 
 @pytest.mark.django_db
 class TestGetCategoryById:
-    def test_should_get_category_by_id_successfully(self, timed_client, test_category):
+    def test_should_return_200_ok_and_get_category_by_id_successfully(self, timed_client, test_category):
         url = f"/api/categories/{test_category.id}"
         response = timed_client.get(url)
         assert response.status_code == 200
@@ -71,11 +71,17 @@ class TestGetCategoryById:
         assert body["name"] == test_category.name.value
         assert body["description"] == test_category.description.value
         assert_has_valid_timestamps(body)
+    
+    def test_should_return_404_not_found_for_invalid_category_id(self, timed_client):
+        url = f"/api/categories/{uuid4()}"
+        response = timed_client.get(url)
+        assert response.status_code == 404
+        assert "Category not found" in response.json()["message"]
 
 
 @pytest.mark.django_db
 class TestUpdateCategoryData:
-    def test_should_get_category_by_id_successfully(self, timed_client, test_category):
+    def test_should_return_status_200_ok_and_get_category_by_id_successfully(self, timed_client, test_category):
         url = f"/api/categories/{test_category.id}"
 
         payload = {
@@ -96,14 +102,29 @@ class TestUpdateCategoryData:
         assert_has_valid_timestamps(body)
 
 
+    def test_should_return_status_404_not_found_for_invalid_category_id(self, timed_client, ):
+        url = f"/api/categories/{uuid4()}"
+
+        payload = {
+            "name": "new name",
+            "description": "new description"
+        }
+        response = timed_client.patch(
+            url, data=json.dumps(payload), content_type="application/json"
+        )
+        assert response.status_code == 404
+        assert "Category not found" in response.json()["message"]
+
+
 @pytest.mark.django_db
 class TestDeleteCategory:
-    def test_should_delete_category_by_id_successfully(self, timed_client, test_category):
+    def test_should_return_status_204_no_content_and_delete_category_by_id_successfully(self, timed_client, test_category):
         url = f"/api/categories/{test_category.id}"
         response = timed_client.delete(url)
         assert response.status_code == 204
     
-    def test_should_fail_delete_category_invalid_id(self, timed_client, test_category):
+    def test_should_return_status_404_not_found_and_fail_delete_category_invalid_id(self, timed_client):
         url = f"/api/categories/{uuid4()}"
         response = timed_client.delete(url)
         assert response.status_code == 404
+        assert "Category not found" in response.json()["message"]

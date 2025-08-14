@@ -35,7 +35,7 @@ def service_and_repository():
 
     return service, repository, logger
 
-class TestCategoryService:
+class TestCreateCategory:
     def test_should_create_category_successfully(self, category, service_and_repository):
         service, mock_repository, mock_logger = service_and_repository
         mock_repository.save.return_value = category
@@ -49,6 +49,7 @@ class TestCategoryService:
 
         
 
+class TestListCategories:
     def test_should_list_categories_successfully(self, category, service_and_repository):
         service, mock_repository, mock_logger = service_and_repository
 
@@ -59,6 +60,8 @@ class TestCategoryService:
         assert len(categories) == 1
         assert_is_equal(categories[0], category)
 
+
+class TestGetCategoryById:
     def test_should_get_category_by_id_successfully(self, category, service_and_repository):
         service, mock_repository, mock_logger = service_and_repository
         mock_repository.get_category_by_id.return_value = category
@@ -75,6 +78,7 @@ class TestCategoryService:
             service.get_category_by_id("invalid id")
         assert "Category not found" in str(exc)
 
+class TestUpdateCategory:
     def test_should_update_category_successfully(self, category, service_and_repository):
         service, mock_repository, mock_logger = service_and_repository
         mock_category = MagicMock()
@@ -108,6 +112,7 @@ class TestCategoryService:
         mock_logger.warning.assert_called_once()
         assert "Category not found" in mock_logger.warning.call_args[0][0]
 
+class TestDeleteCategory:
     def test_should_delete_category_successfully(self, category, service_and_repository):
         service, mock_repository, mock_logger = service_and_repository
         mock_repository.get_category_by_id.return_value = category

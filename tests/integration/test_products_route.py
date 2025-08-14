@@ -69,7 +69,7 @@ def create_test_product(create_product_parameters, create_test_category):
 
 @pytest.mark.django_db
 class TestCreateProduct:
-    def test_should_create_product_successfully(self, timed_client, create_test_category, test_user):
+    def test_should_return_status_201_created_and_product_data(self, timed_client, create_test_category, test_user):
         test_category = create_test_category()
         valid_payload = {
             "title": "valid Title",
@@ -103,7 +103,7 @@ class TestCreateProduct:
 
 @pytest.mark.django_db
 class TestGetProductbyId:
-    def test_should_get_product_by_id_successfully(
+    def test_should_return_status_200_ok_and_product_data(
         self, timed_client, create_test_product, test_user
     ):
         existing_product = create_test_product
@@ -127,9 +127,17 @@ class TestGetProductbyId:
         assert_has_valid_timestamps(body)
 
 
+    def test_should_return_404_not_found_for_invalid_product_id(
+        self, timed_client, create_test_product, test_user
+    ):
+        response = timed_client.get(f"/api/products/{uuid4()}")
+        assert response.status_code == 404
+        assert "not found" in response.json()["message"]
+
+
 @pytest.mark.django_db
 class TestGetProductByCategory:
-    def test_should_list_products_by_category_successfully(
+    def test_should_return_status_200_ok_and_list_products_data_by_category(
         self, timed_client, create_test_product
     ):
         product = create_test_product
@@ -162,7 +170,7 @@ def send_update_request():
 
 @pytest.mark.django_db
 class TestUpdateProduct:
-    def test_should_update_product_data_successfully(
+    def test_should_return_status_200_ok_and_updated_product_data(
         self, timed_client, create_test_product, send_update_request, create_test_category
     ):
         product = create_test_product
@@ -201,10 +209,17 @@ class TestUpdateProduct:
         assert body["categories"][0]["name"] == new_cat_name
         assert body["categories"][0]["id"] == category_payload["categories"][0]
 
+    def test_should_return_status_404_invalid_product_id(self, timed_client):
+        response = timed_client.patch(
+            f"/api/products/{uuid4()}", {'title': 'testing'}, content_type="application/json"
+        )
+        assert response.status_code == 404
+        assert "not found" in response.json()["message"]
+
 
 @pytest.mark.django_db
 class TestProductActivation:
-    def test_should_activate_product_successfully(
+    def test_should_return_status_200_ok_and_activate_product_successfully(
         self, timed_client, create_test_product
     ):
         product = create_test_product
@@ -235,16 +250,26 @@ class TestProductActivation:
         assert deactivation_body["is_active"] is False
         assert_has_valid_timestamps(deactivation_body)
 
+    def test_should_return_404_not_found_for_invalid_product_id(self, timed_client):
+        activation_payload = { "status": True }
+        activation_response = timed_client.patch(
+            f"/api/products/{uuid4()}/activation",
+            activation_payload,
+            content_type="application/json",
+        )
+        assert activation_response.status_code == 404
+        assert "not found" in activation_response.json()["message"]
+
 @pytest.mark.django_db
 class TestDeleteProduct:
-    def test_should_delete_product_successfully(self, create_test_product, timed_client):
+    def test_should_return_204_no_content_and_delete_product_successfully(self, create_test_product, timed_client):
         product = create_test_product
 
         response = timed_client.delete(f"/api/products/{product.id}")
 
         assert response.status_code == 204
 
-    def test_should_get_404_response_for_invalid_product_id(self, timed_client):
+    def test_should_rturn_404_not_found_for_invalid_product_id(self, timed_client):
         response = timed_client.delete(f"/api/products/{uuid4()}")
 
         assert response.status_code == 404
