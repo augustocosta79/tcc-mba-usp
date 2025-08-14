@@ -82,11 +82,20 @@ class TestCartAddProduct:
         assert updated_cart.items[0].quantity == quantity
         reset_mocks()
 
+    def test_should_raise_not_found_error_when_adding_to_cart_of_non_existent_user(self):
+        mock_user_service.get_user_by_id.side_effect = NotFoundError("User not found")
+        with pytest.raises(NotFoundError) as exc:
+            service.add_to_cart(uuid4(), mock_product.id, 1)
+        assert "User not found" in str(exc)
+        mock_user_service.get_user_by_id.side_effect = None
+        reset_mocks()
+
 
 class TestCartSubtractItemQuantity:
      def test_should_subtract_cart_item_quantity_successfully(self):
         quantity_to_subtract = 1
-        cart_item = CartItem(mock_product, 3)
+        quantity = 3
+        cart_item = CartItem(mock_product, quantity)
         cart_with_item = Cart(mock_user.id, [cart_item])
         mock_repository.get_cart_by_user.return_value = cart_with_item
 
@@ -94,7 +103,24 @@ class TestCartSubtractItemQuantity:
 
         mock_repository.get_cart_by_user.assert_called_once_with(mock_user.id)
         mock_repository.update.assert_called_once_with(cart_with_item)
-        assert cart.items[0].quantity == 2
+        assert cart.items[0].quantity == quantity - quantity_to_subtract
+        reset_mocks()
+
+     
+     def test_should_subtract_quantity_and_remove_cart_item_if_subtraction_result_is_zero(self):
+        quantity_to_subtract = 1
+        quantity = 1
+        cart_item = CartItem(mock_product, quantity)
+        cart_with_item = Cart(mock_user.id, [cart_item])
+        mock_repository.get_cart_by_user.return_value = cart_with_item
+
+        cart = service.subtract_quantity_from_cart_item(mock_user.id, mock_product.id, quantity_to_subtract)
+
+        mock_repository.get_cart_by_user.assert_called_once_with(mock_user.id)
+        mock_repository.update.assert_called_once_with(cart_with_item)
+        assert len(cart.items) == 0
+        reset_mocks()
+
 
      def test_should_raise_conflict_error_for_quantity_greater_than_cart_item_quantity(self):
         quantity_to_subtract = 4
@@ -115,3 +141,51 @@ class TestCartSubtractItemQuantity:
         with pytest.raises(NotFoundError) as exc:
             service.subtract_quantity_from_cart_item(mock_user.id, uuid4(), quantity_to_subtract)
         assert "not found in cart" in str(exc)
+
+     def test_should_raise_not_found_error_for_non_existent_cart(self):
+        mock_repository.get_cart_by_user.return_value = None
+        with pytest.raises(NotFoundError) as exc:
+            service.subtract_quantity_from_cart_item(mock_user.id, uuid4(), 1)
+        assert "Cart not found" in str(exc)
+
+class TestRemoveCartItem:
+    def test_should_remove_cart_item_even_if_ramining_quantity_is_greater_than_zero(self):
+        quantity = 3
+        cart_item = CartItem(mock_product, quantity)
+        cart_with_item = Cart(mock_user.id, [cart_item])
+        mock_repository.get_cart_by_user.return_value = cart_with_item
+        updated_cart = service.remove_cart_item(mock_user.id, mock_product.id)
+        mock_repository.update.assert_called_once_with(cart_with_item)
+        assert len(updated_cart.items) == 0
+        reset_mocks()
+
+    def test_should_raise_not_found_error_for_not_found_user_cart(self):
+        mock_repository.get_cart_by_user.return_value = None
+        with pytest.raises(NotFoundError) as exc:
+            service.remove_cart_item(mock_user.id, mock_product.id)
+        assert "Cart not found" in str(exc)
+
+    def test_should_raise_not_found_error_for_not_found_product(self):
+        quantity = 3
+        cart_item = CartItem(mock_product, quantity)
+        cart_with_item = Cart(mock_user.id, [cart_item])
+        mock_repository.get_cart_by_user.return_value = cart_with_item
+        with pytest.raises(NotFoundError) as exc:
+            service.remove_cart_item(mock_user.id, uuid4())
+        assert "not found in cart" in str(exc)
+
+class TestClearCart:
+    def test_should_clear_cart_items_successfully(self):
+        quantity = 3
+        cart_item = CartItem(mock_product, quantity)
+        cart_with_item = Cart(mock_user.id, [cart_item])
+        mock_repository.get_cart_by_user.return_value = cart_with_item
+        updated_cart = service.clear_cart(mock_user.id)
+        mock_repository.update.assert_called_once_with(cart_with_item)
+        assert len(updated_cart.items) == 0
+
+    def test_should_raise_not_found_error_when_clear_invalid_cart(self):
+        mock_repository.get_cart_by_user.return_value = None
+        with pytest.raises(NotFoundError) as exc:
+            service.clear_cart(mock_user.id)
+        assert "Cart not found" in str(exc)

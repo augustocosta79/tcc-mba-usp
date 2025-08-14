@@ -1,4 +1,5 @@
 import json
+from uuid import uuid4
 
 import pytest
 from apps.carts.entity import Cart, CartItem
@@ -37,7 +38,7 @@ def product(user, category):
 
 @pytest.mark.django_db
 class TestAddToCartRoute:
-    def test_should_add_new_cart_item_sucessfully(self, timed_client, user, category, product):
+    def test_should_return_status_200_ok_and_add_new_item_to_cart(self, timed_client, user, category, product):
         url = f"/api/carts/{user.id}/add"
 
         payload = {
@@ -61,11 +62,26 @@ class TestAddToCartRoute:
         assert body["items"][0]["product"]["owner_id"] == str(product.owner_id)
         assert body["items"][0]["product"]["categories"][0]["id"] == str(category.id)
         assert body["items"][0]["quantity"] == payload["quantity"]
+    
+    
+    def test_should_return_404_status_when_adding_new_cart_item_to_not_found_user(self, timed_client, user, category, product):
+        url = f"/api/carts/{uuid4()}/add"
+
+        payload = {
+            "product_id": str(product.id),
+            "quantity": 1
+        }
+
+        assert cart_repository.get_cart_by_user(user.id) is None
+
+        response = timed_client.post(url, data=json.dumps(payload), content_type="application/json")
+        assert response.status_code == 404
+        assert "not found" in response.json()["message"]
 
         
 @pytest.mark.django_db
 class TestSubtractItemCartQuantityRoute:
-    def test_should_subtract_valid_quantity_from_item_cart_successfully(self, timed_client, user, product):
+    def test_should_return_status_200_ok_and_subtract_valid_quantity_from_item_cart(self, timed_client, user, product):
         cart_item = CartItem(product, 3)
         cart = Cart(user.id, [cart_item])
         cart_repository.save(cart)
@@ -87,3 +103,67 @@ class TestSubtractItemCartQuantityRoute:
         assert item["quantity"] > 0
         assert cart_item.quantity - payload["quantity"] == item["quantity"]
 
+    def test_should_return_status_404_not_found_for_non_existent_cart(self, timed_client, user, product):        
+        url = f"/api/carts/{uuid4()}/subtract"
+
+        payload = {
+            "product_id": str(product.id),
+            "quantity": 1
+        }
+
+        response = timed_client.post(url, data=json.dumps(payload), content_type="application/json")
+        assert response.status_code == 404
+        assert "Cart not found" in response.json()["message"]
+
+@pytest.mark.django_db
+class TestRemoveCartItemRoute:
+    def test_should_return_200_ok_and_remove_cart_item(self, timed_client, user, product):
+        cart_item = CartItem(product, 3)
+        cart = Cart(user.id, [cart_item])
+        cart_repository.save(cart)
+        
+        url = f"/api/carts/{user.id}/remove/{product.id}"
+
+        response = timed_client.get(url)
+        assert response.status_code == 200
+
+        body = response.json()
+
+        assert len(body["items"]) == 0
+
+    def test_should_return_404_not_found_when_removing_not_found_cart(self, timed_client, user, product):
+        cart_item = CartItem(product, 3)
+        cart = Cart(user.id, [cart_item])
+        cart_repository.save(cart)
+
+        url = f"/api/carts/{uuid4()}/remove/{product.id}"
+
+        response = timed_client.get(url)
+        assert response.status_code == 404
+        assert "Cart not found" in response.json()["message"]
+
+    def test_should_return_404_not_found_when_removing_not_found_product(self, timed_client, user, product):
+        cart_item = CartItem(product, 3)
+        cart = Cart(user.id, [cart_item])
+        cart_repository.save(cart)
+
+        url = f"/api/carts/{user.id}/remove/{uuid4()}"
+
+        response = timed_client.get(url)
+        assert response.status_code == 404
+        assert "not found in cart" in response.json()["message"]
+
+@pytest.mark.django_db
+class TestClearCartRoute:
+    def test_should_return_status_200_ok_and_clear_cart(self, timed_client, user, product):
+        cart_item1 = CartItem(product, 3)
+        cart_item2 = CartItem(product, 1)
+        cart = Cart(user.id, [cart_item1, cart_item2])
+        cart_repository.save(cart)
+
+        url = f"/api/carts/{user.id}/clear"
+        response = timed_client.get(url)
+        assert response.status_code == 200
+
+        body = response.json()
+        assert len(body["items"]) == 0

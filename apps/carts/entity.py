@@ -54,6 +54,18 @@ class Cart:
                 if item._quantity - quantity < 0:
                     raise ConflictError("Quantity cannot be negative")
                 item._quantity -= quantity
+                if item._quantity == 0:
+                    self._items.remove(item)
                 return
         raise NotFoundError(f"Product {product_id} not found in cart")
+    
+    def remove_cart_item(self, product_id: UUID):
+        for item in self._items:
+            if item.product.id == product_id:
+                self._items.remove(item)
+                return
+        raise NotFoundError(f"Product {product_id} not found in cart")
+    
+    def clear_cart(self):
+        self._items.clear()
 

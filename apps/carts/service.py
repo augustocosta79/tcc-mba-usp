@@ -4,6 +4,7 @@ from apps.products.service import ProductService
 from apps.users.service import UserService
 from apps.carts.entity import Cart
 from apps.carts.entity import CartItem
+from apps.shared.exceptions import NotFoundError
 from logging import Logger
 
 class CartService:
@@ -32,6 +33,24 @@ class CartService:
     
     def subtract_quantity_from_cart_item(self, user_id: UUID, product_id: UUID, quantity: int) -> Cart:
         cart = self.repository.get_cart_by_user(user_id)
+        if not cart:
+            raise NotFoundError(f"Cart not found for user id {user_id}")
         cart.subtract_item_quantity(product_id, quantity)
+        self.repository.update(cart)
+        return cart
+    
+    def remove_cart_item(self, user_id: UUID, product_id: UUID) -> Cart:
+        cart = self.repository.get_cart_by_user(user_id)
+        if not cart:
+             raise NotFoundError(f"Cart not found for user id {user_id}")
+        cart.remove_cart_item(product_id)
+        self.repository.update(cart)
+        return cart
+    
+    def clear_cart(self, user_id: UUID):
+        cart = self.repository.get_cart_by_user(user_id)
+        if not cart:
+            raise NotFoundError(f"Cart not found for user id {user_id}")
+        cart.clear_cart()
         self.repository.update(cart)
         return cart

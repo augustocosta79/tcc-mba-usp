@@ -60,3 +60,14 @@ def subtract_quantity_from_cart_item(
         user_id, payload.product_id, payload.quantity
     )
     return cart_entity_to_schema(cart)
+
+@cart_router.get("/{user_id}/remove/{product_id}", response = {HTTPStatus.OK: CartSchema})
+def remove_cart_item(request, user_id: UUID, product_id: UUID):
+    cart = service.remove_cart_item(user_id, product_id)
+    return cart_entity_to_schema(cart)
+
+
+@cart_router.get("{user_id}/clear", response={ HTTPStatus.OK: CartSchema, HTTPStatus.NOT_FOUND: ErrorSchema, HTTPStatus.INTERNAL_SERVER_ERROR: ErrorSchema})
+def clear_cart(request, user_id: UUID):
+    cart = service.clear_cart(user_id)
+    return cart_entity_to_schema(cart)
