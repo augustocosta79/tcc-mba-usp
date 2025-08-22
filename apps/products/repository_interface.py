@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from uuid import UUID
 
 class ProductRepositoryInterface(ABC):
     @abstractmethod
@@ -19,4 +20,8 @@ class ProductRepositoryInterface(ABC):
 
     @abstractmethod
     def delete_product(self):
+        pass
+
+    @abstractmethod
+    def get_product_for_update(self, product_id: UUID):
         pass

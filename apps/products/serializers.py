@@ -1,5 +1,5 @@
 from apps.products.product_entity import Product
-from apps.products.schema import ProductSchema
+from apps.products.schema import ProductSchema, ProductNestedSchema
 from apps.products.models import ProductModel
 from apps.categories.serializers import category_to_nested_schema
 from apps.shared.value_objects import Title, Description, Price, Stock
@@ -18,6 +18,17 @@ def product_to_schema(product: Product) -> ProductSchema:
             created_at=product.created_at,
             updated_at=product.updated_at,
         )
+
+def product_to_nested_schema(product: Product) -> ProductNestedSchema:
+    return ProductNestedSchema(
+            id=product.id,
+            title=product.title.value,
+            description=product.description.value,
+            price=str(product.price.value),
+            stock=product.stock.value,
+            owner_id=product.owner_id,
+            categories=product.categories
+    )
 
 def product_model_to_entity(product_model: ProductModel) -> Product:
     return Product(

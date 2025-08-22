@@ -18,6 +18,16 @@ class ProductSchema(BaseModel):
     updated_at: datetime
 
 
+class ProductNestedSchema(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    price: str
+    stock: int
+    owner_id: UUID
+    categories: list[CategoryNestedSchema]
+
+
 
 class ProductCreateSchema(BaseModel):
     title: str

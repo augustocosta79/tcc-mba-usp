@@ -55,3 +55,8 @@ class ProductRepository(ProductRepositoryInterface):
         if not (product_data := ProductModel.objects.filter(id=product.id).first()):
             return None        
         product_data.delete()
+
+    def get_product_for_update(self, product_id: UUID):
+        if not (product_data:=ProductModel.objects.select_for_update().filter(id=product_id).first()):
+            return None
+        return product_model_to_entity(product_data)
