@@ -16,6 +16,13 @@ class UserSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
+class UserNestedSchema(BaseModel):
+    id: UUID
+    email: str
+    name: str
+    username: str
+
 class UserCreateSchema(BaseModel):
     name: str = Field(..., min_length=2)
     email: str = Field(..., pattern=EMAIL_REGEX)
