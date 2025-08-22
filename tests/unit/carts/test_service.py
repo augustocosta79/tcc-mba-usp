@@ -189,3 +189,36 @@ class TestClearCart:
         with pytest.raises(NotFoundError) as exc:
             service.clear_cart(mock_user.id)
         assert "Cart not found" in str(exc)
+
+class TestGetCartByUser:
+    def test_should_get_cart_by_user_id(self, test_cart):
+        reset_mocks()
+        mock_user_service.get_user_by_id.return_value = mock_user
+        mock_repository.get_cart_by_user.return_value = test_cart
+
+        cart = service.get_cart_by_user(mock_user.id)
+
+        assert cart.id == test_cart.id
+        assert cart.user_id == test_cart.user_id
+        mock_user_service.get_user_by_id.assert_called_once_with(mock_user.id)
+        mock_repository.get_cart_by_user.assert_called_once_with(mock_user.id)
+
+    def test_should_raise_not_found_error_for_user_id_without_existing_cart(self, test_cart):
+        reset_mocks()
+        mock_user_service.get_user_by_id.return_value = mock_user
+        mock_repository.get_cart_by_user.return_value = None
+
+        with pytest.raises(NotFoundError) as exc:
+            service.get_cart_by_user(mock_user.id)
+        assert "Cart not found" in str(exc)
+
+
+    def test_should_raise_not_found_error_for_invalid_user_id(self, test_cart):
+        reset_mocks()
+        mock_user_service.get_user_by_id.side_effect = NotFoundError("User not found")
+        
+        with pytest.raises(NotFoundError) as exc:
+            service.get_cart_by_user(mock_user.id)
+        assert "User not found" in str(exc)
+        
+        mock_user_service.get_user_by_id.side_effect = None

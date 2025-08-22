@@ -12,6 +12,15 @@ from apps.categories.service import CategoryService
 from apps.categories.repository import CategoryRepository
 from utils.logger import configure_logger
 from apps.categories.entity import Category
+from django.db import connection, transaction
+
+import threading
+from time import sleep
+
+from django.test import TransactionTestCase
+from apps.products.models import ProductModel
+from apps.shared.exceptions import OutOfStockError
+from apps.products.product_entity import Product
 
 logger = configure_logger(__name__)
 repository = CategoryRepository()
@@ -166,3 +175,41 @@ class TestProductRepository:
         repository.delete_product(product)
 
         assert repository.get_product_by_id(product.id) is None
+
+
+
+    @pytest.mark.django_db(transaction=True)
+    def test_debit_stock_concurrently_should_lock_and_preserve_consistency(self, create_product_and_repository):
+        product, repository = create_product_and_repository
+        saved_product = repository.save(product)
+
+        result = {}
+
+        def debit_stock(quantity, transaction_id, sleep_time):
+            try:
+                sleep(sleep_time)
+                with transaction.atomic():
+                    reserved_product = repository.get_product_for_update(saved_product.id)
+                    result[f"{transaction_id}_before"] = reserved_product.stock.value
+                    new_quantity = reserved_product.stock.value - quantity
+                    reserved_product.change_stock(new_quantity)
+                    repository.update_product(reserved_product)
+                    result[f"{transaction_id}_after"] = reserved_product.stock.value
+            finally:
+                    connection.close()
+
+
+        t1 = threading.Thread(target=debit_stock, args=(2, "t1", 0))
+        t2 = threading.Thread(target=debit_stock, args=(1, "t2", 0.5))
+
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+        assert result["t1_before"] == 5
+        assert result["t1_after"] == 3
+        assert result["t2_before"] == 3
+        assert result["t2_after"] == 2
+
+        

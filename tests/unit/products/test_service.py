@@ -294,4 +294,29 @@ class TestProductDeletion:
         mock_logger.warning.assert_called_once()
         assert "Not found Product" in mock_logger.warning.call_args[0][0]
         assert "not found" in str(exc)
+
+class TestProductStockReservation:
+    def test_should_update_stock_with_remaining_quantity(self, test_product, mock_repository_and_service):
+        mock_repository, service = mock_repository_and_service
+        reserved_quantity = 3
+        mock_product = MagicMock()
+        mock_product.stock.value = 5
+        mock_repository.get_product_for_update.return_value = mock_product
+
+        service.reserve_stock(test_product.id, reserved_quantity)
+
+        mock_repository.get_product_for_update.assert_called_once_with(test_product.id)
+        mock_product.change_stock.assert_called_once()
+        mock_repository.update_product.assert_called_once_with(mock_product)
+    
+    def test_should_raise_not_found_error_for_invalid_product_id(self, mock_repository_and_service):
+        mock_repository, service = mock_repository_and_service
+        reserved_quantity = 3
+        mock_repository.get_product_for_update.return_value = None
+        
+        with pytest.raises(NotFoundError) as exc:
+            service.reserve_stock(uuid4(), reserved_quantity)
+
+        assert "Product not found" in str(exc)
+        assert "Product not found" in mock_logger.warning.call_args[0][0]
         
