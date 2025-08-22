@@ -10,7 +10,7 @@ from apps.shared.value_objects.address import (
     Street,
     StreetNumber,
 )
-from apps.addresses.schema import AddressSchema
+from apps.addresses.schema import AddressNestedSchema, AddressSchema
 
 
 def from_address_model_to_entity(address_model: AddressModel) -> Address:
@@ -30,6 +30,21 @@ def from_address_model_to_entity(address_model: AddressModel) -> Address:
 
 def from_address_entity_to_schema(address: Address) -> AddressSchema:
     return AddressSchema(
+        id=address.id,
+        user_id=address.user_id,
+        street=address.street.value,
+        street_number=address.street_number.value,
+        complement=address.complement.value,
+        district=address.district.value,
+        city=address.city.value,
+        state_code=address.state_code.value,
+        postal_code=address.postal_code.value,
+        country=address.country.value,
+        is_default=address.is_default,
+    )
+
+def from_address_entity_to_nested_schema(address: Address) -> AddressNestedSchema:
+    return AddressNestedSchema(
         id=address.id,
         user_id=address.user_id,
         street=address.street.value,

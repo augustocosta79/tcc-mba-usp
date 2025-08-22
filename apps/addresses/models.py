@@ -3,7 +3,7 @@ from django.db import models
 
 class AddressModel(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    user = models.ForeignKey("users.UserModel", on_delete=models.CASCADE, related_name="address")
+    user = models.ForeignKey("users.UserModel", on_delete=models.CASCADE, related_name="addresses")
     street = models.CharField(max_length=150)
     street_number = models.CharField(max_length=20)
     complement = models.CharField(max_length=20)
