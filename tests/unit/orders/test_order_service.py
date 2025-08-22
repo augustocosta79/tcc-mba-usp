@@ -6,7 +6,6 @@ import pytest
 from apps.orders.service import OrderService
 from apps.orders.enums import OrderStatus
 from apps.orders.schemas import OrderSchema
-from apps.orders.entity import OrderItem
 from apps.shared.value_objects import Price, Stock
 from apps.shared.exceptions import OutOfStockError
 
@@ -15,9 +14,10 @@ from apps.shared.exceptions import OutOfStockError
 def order_service():
     repository = MagicMock()
     user_service = MagicMock()
+    product_service = MagicMock()
     cart_service = MagicMock()
     address_service = MagicMock()
-    return OrderService(repository, user_service, cart_service, address_service)
+    return OrderService(repository, user_service, product_service, cart_service, address_service)
 
 
 def create_mock_product(id=None, price=100, stock=10, title="Test Product"):
@@ -104,7 +104,7 @@ class TestOrderCreation:
         assert result.address.id == address.id
 
 
-    def test_create_order_out_of_stock(self, order_service):
+    def test_should_fail_create_order_with_out_of_stock_product(self, order_service):
         user_id = uuid4()
         address_id = uuid4()
 
@@ -124,6 +124,12 @@ class TestOrderCreation:
         address = MagicMock()
         address.id = address_id
         order_service.address_service.get_address_by_id.return_value = address
+
+        user = create_mock_user()
+        user.id = user_id
+        order_service.user_service.get_user_by_id.return_value = user
+
+        order_service.product_service.reserve_stock.side_effect = OutOfStockError("Out of stock product")
 
         with pytest.raises(OutOfStockError):
             order_service.create_order(user_id, address_id)
