@@ -7,3 +7,7 @@ class Price(NumericVO):
         
     def __str__(self):
         return f"R${self.value}"
+    
+    def __add__(self, other):
+            if isinstance(other, self.__class__):
+                return Price(self.value + other.value)
