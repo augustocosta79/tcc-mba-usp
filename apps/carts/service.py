@@ -54,3 +54,14 @@ class CartService:
         cart.clear_cart()
         self.repository.update(cart)
         return cart
+    
+    def get_cart_by_user(self, user_id: UUID):
+        try:
+            user = self.user_service.get_user_by_id(user_id)
+        except NotFoundError as exc:
+            raise NotFoundError(str(exc))
+        
+        cart = self.repository.get_cart_by_user(user.id)
+        if not cart:
+            raise NotFoundError(f"Cart not found for user {user_id}")
+        return cart
