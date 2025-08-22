@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 from apps.users.schema import UserNestedSchema
-from apps.addresses.schema import AddressNestedSchema
+from apps.addresses.schema import AddressSchema
 from apps.orders.enums import OrderStatus
 from apps.products.schema import ProductNestedSchema
 
@@ -12,11 +12,14 @@ class OrderItemSchema(BaseModel):
     id: UUID
     product: ProductNestedSchema
     quantity: int
-    price: int
+    price: str
 
 class OrderSchema(BaseModel):
     id: UUID
     user: UserNestedSchema
-    address: AddressNestedSchema
+    address: AddressSchema
     items: List[OrderItemSchema]
     status: OrderStatus
+
+class OrderCreateSchema(BaseModel):
+    address_id: UUID

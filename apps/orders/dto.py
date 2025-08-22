@@ -1,14 +1,13 @@
 from apps.orders.entity import Order, OrderItem
 from apps.orders.schemas import OrderSchema, OrderItemSchema
 from apps.users.schema import UserNestedSchema
-from apps.addresses.schema import AddressNestedSchema
 from apps.products.schema import ProductNestedSchema
 from apps.users.entity import User
 from apps.addresses.entity import Address
 from apps.products.product_entity import Product
 from apps.users.serializers import user_to_nested_schema
 from apps.products.serializers import product_to_nested_schema
-from apps.addresses.serializers import from_address_entity_to_nested_schema
+from apps.addresses.serializers import from_address_entity_to_schema
 
 class OrderDTO:
     @staticmethod
@@ -26,14 +25,14 @@ class OrderDTO:
                     id=order_item.id,
                     product=product_to_nested_schema(product),
                     quantity=order_item.quantity,
-                    price=order_item.price.value,
+                    price=str(order_item.price.value),
                 )
             )
 
         return OrderSchema(
             id=order.id,
             user=user_to_nested_schema(user),
-            address=from_address_entity_to_nested_schema(address),
+            address=from_address_entity_to_schema(address),
             items=items,
             status=order.status,
         )

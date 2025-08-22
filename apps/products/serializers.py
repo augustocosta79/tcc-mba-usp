@@ -27,7 +27,7 @@ def product_to_nested_schema(product: Product) -> ProductNestedSchema:
             price=str(product.price.value),
             stock=product.stock.value,
             owner_id=product.owner_id,
-            categories=product.categories
+            categories=[ category_to_nested_schema(category) for category in product.categories ]
     )
 
 def product_model_to_entity(product_model: ProductModel) -> Product:

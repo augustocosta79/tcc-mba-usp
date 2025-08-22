@@ -34,7 +34,7 @@ class OrderService:
         with transaction.atomic():
             order_items = []
             for item in cart.items:
-                self.product_service.reserve_stock(item.product, item.quantity)
+                self.product_service.reserve_stock(item.product.id, item.quantity)
                 order_items.append(
                     OrderItem(item.product.id, item.quantity, item.product.price)
                 )

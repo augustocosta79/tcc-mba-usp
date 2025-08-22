@@ -15,7 +15,7 @@ from apps.carts.service import CartService
 from apps.carts.repository import CartRepository
 from apps.users.service import UserService
 from apps.users.repository import UserRepository
-from apps.orders.schemas import OrderSchema
+from apps.orders.schemas import OrderSchema, OrderCreateSchema
 
 
 logger = configure_logger(__name__)
@@ -25,12 +25,19 @@ category_service = CategoryService(CategoryRepository(), logger)
 address_service = AddressService(AddressRepository(), logger)
 cart_service = CartService(CartRepository(), product_service, user_service, logger)
 
-service = OrderService(OrderRepository(), user_service, cart_service, address_service)
-
+service = OrderService(OrderRepository(), user_service, product_service, cart_service, address_service)
 
 
 orders_router = Router()
 
-@orders_router.post("/{user_id}", response = {HTTPStatus.CREATED: OrderSchema, HTTPStatus.NOT_FOUND: ErrorSchema, HTTPStatus.INTERNAL_SERVER_ERROR: ErrorSchema})
-def create_order(request, user_id: UUID):
-    return service.create_order(user_id)    
+
+@orders_router.post(
+    "/{user_id}",
+    response={
+        HTTPStatus.CREATED: OrderSchema,
+        HTTPStatus.NOT_FOUND: ErrorSchema,
+        HTTPStatus.INTERNAL_SERVER_ERROR: ErrorSchema,
+    },
+)
+def create_order(request, user_id: UUID, payload: OrderCreateSchema):
+    return HTTPStatus.CREATED, service.create_order(user_id, payload.address_id)

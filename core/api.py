@@ -10,6 +10,7 @@ from apps.products.api import products_router
 from apps.categories.api import categories_router
 from apps.addresses.api import address_router
 from apps.carts.api import cart_router
+from apps.orders.api import orders_router
 
 api = NinjaAPI(
     csrf=False,
@@ -26,6 +27,7 @@ api.add_router("/products", products_router, tags=["Products"])
 api.add_router("/categories", categories_router, tags=["Categories"])
 api.add_router("/addresses", address_router, tags=["Addresses"])
 api.add_router("/carts", cart_router, tags=["Carts"])
+api.add_router("/orders", orders_router, tags=["Orders"])
 
 # Exception Handlers
 logger = configure_logger("api")
