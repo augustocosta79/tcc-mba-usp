@@ -13,3 +13,6 @@ class UnauthorizedError(DomainError):
 
 class UnprocessableEntityError(DomainError):
     pass
+
+class OutOfStockError(DomainError):
+    pass

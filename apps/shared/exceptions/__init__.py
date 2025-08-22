@@ -1,3 +1,3 @@
-from .exceptions import UnauthorizedError, NotFoundError, ConflictError, UnprocessableEntityError
+from .exceptions import UnauthorizedError, NotFoundError, ConflictError, UnprocessableEntityError, OutOfStockError
 
-__all__ = [UnauthorizedError, NotFoundError, ConflictError, UnprocessableEntityError]
+__all__ = [UnauthorizedError, NotFoundError, ConflictError, UnprocessableEntityError, OutOfStockError]
