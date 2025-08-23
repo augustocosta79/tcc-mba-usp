@@ -46,3 +46,11 @@ class OrderService:
 
 
             return OrderDTO.build(order, user, address, products)
+        
+    def get_order_by_id(self, order_id: UUID):
+        order = self.repository.get_order_by_id(order_id)
+        user = self.user_service.get_user_by_id(order.user_id)
+        address = self.address_service.get_address_by_id(order.address_id)
+        products = [ self.product_service.get_product_by_id(item.product_id) for item in order.items ]
+
+        return OrderDTO.build(order, user, address, products)

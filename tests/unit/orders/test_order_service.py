@@ -133,3 +133,44 @@ class TestOrderCreation:
 
         with pytest.raises(OutOfStockError):
             order_service.create_order(user_id, address_id)
+
+class TestGetOrderById:
+    def test_should_return_order_by_id_successfully(self, order_service):
+        mock_user = create_mock_user()
+        mock_product = create_mock_product()
+        mock_address = create_mock_address()
+        
+        mock_order_item = MagicMock()
+        mock_order_item.id = uuid4()
+        mock_order_item.product_id = mock_product.id
+        mock_order_item.quantity = 4
+        mock_order_item.price = mock_product.price
+        
+        mock_order = MagicMock()
+        mock_order.id = uuid4()
+        mock_order.user_id = mock_user.id
+        mock_order.address_id = mock_address.id
+        mock_order.items = [ mock_order_item ]
+        mock_order.status = OrderStatus.PENDING
+
+
+        order_service.repository.get_order_by_id.return_value = mock_order
+        order_service.user_service.get_user_by_id.return_value = mock_user
+        order_service.address_service.get_address_by_id.return_value = mock_address
+        order_service.product_service.get_product_by_id.return_value = mock_product
+
+        order = order_service.get_order_by_id(mock_order.id)
+
+        order_service.repository.get_order_by_id.assert_called_once_with(mock_order.id)
+        order_service.user_service.get_user_by_id.assert_called_once_with(mock_order.user_id)
+        order_service.address_service.get_address_by_id.assert_called_once_with(mock_order.address_id)
+        order_service.product_service.get_product_by_id.assert_called_once_with(mock_order_item.product_id)
+
+        assert order.id == mock_order.id
+        assert order.user.id == mock_order.user_id
+        assert order.address.id == mock_order.address_id
+        assert len(order.items) == len(mock_order.items)
+        assert order.items[0].id == mock_order_item.id
+        assert order.items[0].product.id == mock_order_item.product_id
+        assert order.items[0].quantity == mock_order_item.quantity
+        assert order.items[0].price == str(mock_order_item.price.value)
