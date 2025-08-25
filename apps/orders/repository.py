@@ -1,3 +1,4 @@
+from uuid import UUID
 from apps.orders.repository_interface import OrderRepositoryInterface
 from apps.orders.entity import Order, OrderItem
 from apps.orders.models import OrderModel, OrderItemModel
@@ -37,4 +38,24 @@ class OrderRepository(OrderRepositoryInterface):
             order_data.status,
             order_data.id,
         )
+    
+    def get_order_by_id(self, order_id: UUID):
+        if not (order_data:=OrderModel.objects.filter(id=order_id).first()):
+            return None
+        
+        items_data = order_data.items.all()
+
+        items = [
+            OrderItem(item.product_id, item.quantity, Price(item.price), item.id)
+            for item in items_data
+        ]
+
+        return Order(
+            order_data.user_id,
+            order_data.address_id,
+            items,
+            order_data.status,
+            order_data.id,
+        )
+
         

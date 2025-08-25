@@ -32,7 +32,7 @@ orders_router = Router()
 
 
 @orders_router.post(
-    "/{user_id}",
+    "/users/{user_id}",
     response={
         HTTPStatus.CREATED: OrderSchema,
         HTTPStatus.NOT_FOUND: ErrorSchema,
@@ -41,3 +41,14 @@ orders_router = Router()
 )
 def create_order(request, user_id: UUID, payload: OrderCreateSchema):
     return HTTPStatus.CREATED, service.create_order(user_id, payload.address_id)
+
+
+@orders_router.get(
+    "/{order_id}",
+    response = {
+        HTTPStatus.OK: OrderSchema,
+        HTTPStatus.INTERNAL_SERVER_ERROR: ErrorSchema
+    }
+)
+def get_order_by_id(request, order_id: UUID) -> OrderSchema:
+    return service.get_order_by_id(order_id)

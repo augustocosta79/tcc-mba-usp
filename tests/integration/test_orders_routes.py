@@ -93,15 +93,15 @@ def add_test_product_to_cart(timed_client, test_user):
     return _add
 
 
-@pytest.mark.django_db
-class TestOrderCreation:
-    def test_should_return_status_201_created_and_order_data(self, timed_client, create_test_product, test_user, test_address, add_test_product_to_cart):
+@pytest.fixture
+def request_order_creation(timed_client, create_test_product, add_test_product_to_cart):
+    def _create(test_user, test_address, product_stock, item_quantity):
         user_id = test_user["id"]
         address_id = test_address["id"]
-        product = create_test_product(10)       
-        add_test_product_to_cart(product, 3)
+        product = create_test_product(product_stock)       
+        add_test_product_to_cart(product, item_quantity)
 
-        url = f"/api/orders/{user_id}"
+        url = f"/api/orders/users/{user_id}"
         
         valid_payload = {
             "address_id": address_id
@@ -112,10 +112,52 @@ class TestOrderCreation:
             )
         assert response.status_code == 201
 
-        body = response.json()
+        return response
+    return _create
 
-        assert body["user"]["id"] == str(user_id)
-        assert body["address"]["id"] == str(address_id)
+
+def assert_order_created_successfully(body, user_dict, address_dict, item_quantity):
+        assert body["user"]["id"] == str(user_dict["id"])
+        assert body["address"]["id"] == str(address_dict["id"])
         assert body["status"] == OrderStatus.PENDING.value
         assert len(body["items"]) == 1
-        assert body["items"][0]["quantity"] == 3
+        assert body["items"][0]["quantity"] == item_quantity
+
+
+@pytest.mark.django_db
+class TestOrderCreation:
+    def test_should_return_status_201_created_and_order_data(self, test_user, test_address, request_order_creation):
+        product_stock = 10
+        item_quantity = 3
+        response = request_order_creation(test_user, test_address, product_stock, item_quantity)
+
+        body = response.json()
+        assert_order_created_successfully(body, test_user, test_address, item_quantity)
+
+
+@pytest.mark.django_db
+class TestGetOrderById:
+    def test_should_return_status_200_ok_and_data_by_order_id(self, timed_client, test_user, test_address, request_order_creation):
+        product_stock = 10
+        item_quantity = 3
+        creation_response = request_order_creation(test_user, test_address, product_stock, item_quantity)
+
+        creation_body = creation_response.json()
+        assert_order_created_successfully(creation_body, test_user,test_address, item_quantity)
+
+        order_id = creation_body["id"]
+        url = f"/api/orders/{order_id}"
+
+        response = timed_client.get(url)
+        assert response.status_code == 200
+
+        body = response.json()
+        assert body["id"] == creation_body["id"]
+        assert body["user"]["id"] == creation_body["user"]["id"]
+        assert body["address"]["id"] == creation_body["address"]["id"]
+        assert body["status"] == creation_body["status"]
+        assert len(body["items"]) == len(creation_body["items"])
+        assert body["items"][0]["product"]["id"] == creation_body["items"][0]["product"]["id"]
+        assert body["items"][0]["product"]["stock"] == product_stock - item_quantity
+        assert body["items"][0]["quantity"] == item_quantity
+        assert body["items"][0]["price"] == creation_body["items"][0]["price"]
