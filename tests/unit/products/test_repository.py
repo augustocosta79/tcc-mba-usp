@@ -145,13 +145,6 @@ class TestProductRepository:
         assert updated_product.price.value == Decimal(new_price)
         assert updated_product.updated_at > product.updated_at
 
-        new_stock = 1
-        product.change_stock(new_stock)
-        updated_product = repository.update_product(product)
-        assert updated_product.stock == Stock(new_stock)
-        assert updated_product.stock.value == new_stock
-        assert updated_product.updated_at > product.updated_at
-
         new_category = category_service.create_category("new cat", "new desc")
         product.change_categories([new_category])
         updated_product = repository.update_product(product)
@@ -191,8 +184,7 @@ class TestProductRepository:
                 with transaction.atomic():
                     reserved_product = repository.get_product_for_update(saved_product.id)
                     result[f"{transaction_id}_before"] = reserved_product.stock.value
-                    new_quantity = reserved_product.stock.value - quantity
-                    reserved_product.change_stock(new_quantity)
+                    reserved_product.reserve_stock(quantity)
                     repository.update_product(reserved_product)
                     result[f"{transaction_id}_after"] = reserved_product.stock.value
             finally:

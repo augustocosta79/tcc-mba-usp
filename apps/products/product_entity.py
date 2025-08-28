@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import datetime
 from apps.shared.value_objects import Title, Description, Price, Stock
 from apps.categories.entity import Category
+from apps.shared.exceptions import OutOfStockError
 
 class Product:
     def __init__(
@@ -80,8 +81,14 @@ class Product:
     def change_price(self, new_price: str):
         self._price = Price(new_price)
     
-    def change_stock(self, new_stock: int):
-        self._stock = Stock(new_stock)
+    def reserve_stock(self, reserved_quantity: int):
+        remaining_quantity = self._stock.value - reserved_quantity        
+        if remaining_quantity < 0:
+            raise OutOfStockError("Out of stock product")
+        self._stock = Stock(remaining_quantity)
+    
+    def release_stock(self, released_quantity: int):
+        self._stock = Stock(self._stock.value + released_quantity)
     
     def change_categories(self, new_categories: list[Category]):
         self._categories = new_categories

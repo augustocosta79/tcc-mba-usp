@@ -23,3 +23,6 @@ class OrderSchema(BaseModel):
 
 class OrderCreateSchema(BaseModel):
     address_id: UUID
+
+class OrderStatusChangeSchema(BaseModel):
+    new_status: OrderStatus

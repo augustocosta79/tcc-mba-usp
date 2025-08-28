@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
+from apps.products.product_entity import Product
 
 class ProductRepositoryInterface(ABC):
     @abstractmethod
@@ -23,5 +24,5 @@ class ProductRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def get_product_for_update(self, product_id: UUID):
+    def get_product_for_update(self, product_id: UUID) -> Product:
         pass

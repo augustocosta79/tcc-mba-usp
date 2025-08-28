@@ -6,7 +6,7 @@ import pytest
 from apps.products.product_entity import Product
 from apps.products.schema import ProductActivationSchema, ProductUpdateSchema
 from apps.products.service import ProductService
-from apps.shared.exceptions import NotFoundError
+from apps.shared.exceptions import NotFoundError, OutOfStockError
 from apps.shared.value_objects import Description, Price, Stock, Title
 from apps.categories.entity import Category
 
@@ -195,13 +195,6 @@ class TestProductUpdate:
         assert "Product successfully updated" in mock_logger.info.call_args[0][0]
         mock_logger.reset_mock()
 
-        stock_payload = {"stock": 3}
-        update_product(service, mock_product.id, stock_payload)
-        mock_product.change_stock.assert_called_once_with(stock_payload["stock"])
-        mock_logger.info.assert_called_once()
-        assert "Product successfully updated" in mock_logger.info.call_args[0][0]
-        mock_logger.reset_mock()
-
         category_payload = {"categories": [uuid4()]}
         update_product(service, mock_product.id, category_payload)
         mock_product.change_categories.assert_called_once()
@@ -296,18 +289,25 @@ class TestProductDeletion:
         assert "not found" in str(exc)
 
 class TestProductStockReservation:
-    def test_should_update_stock_with_remaining_quantity(self, test_product, mock_repository_and_service):
+    def test_should_reserve_stock_quantity_successfully(self, test_product, mock_repository_and_service):
         mock_repository, service = mock_repository_and_service
         reserved_quantity = 3
-        mock_product = MagicMock()
-        mock_product.stock.value = 5
-        mock_repository.get_product_for_update.return_value = mock_product
+        mock_repository.get_product_for_update.return_value = test_product
 
-        service.reserve_stock(test_product.id, reserved_quantity)
+        product = service.reserve_stock(test_product.id, reserved_quantity)
 
         mock_repository.get_product_for_update.assert_called_once_with(test_product.id)
-        mock_product.change_stock.assert_called_once()
-        mock_repository.update_product.assert_called_once_with(mock_product)
+        mock_repository.update_product.assert_called_once_with(test_product)
+        assert product.stock.value == 2
+    
+    
+    def test_should_raise_out_of_stock_error_for_reserved_quantity_grater_than_stock(self, test_product, mock_repository_and_service):
+        mock_repository, service = mock_repository_and_service
+        reserved_quantity = 10
+        mock_repository.get_product_for_update.return_value = test_product
+        with pytest.raises(OutOfStockError) as exc:
+            service.reserve_stock(test_product.id, reserved_quantity)
+        assert "Out of stock product" in str(exc)
     
     def test_should_raise_not_found_error_for_invalid_product_id(self, mock_repository_and_service):
         mock_repository, service = mock_repository_and_service
@@ -319,4 +319,15 @@ class TestProductStockReservation:
 
         assert "Product not found" in str(exc)
         assert "Product not found" in mock_logger.warning.call_args[0][0]
-        
+
+class TestProductStockRelease:
+    def test_should_release_stock_quantity_successfully(self, test_product, mock_repository_and_service):
+        mock_repository, service = mock_repository_and_service
+        released_quantity = 3
+        mock_repository.get_product_for_update.return_value = test_product
+
+        product = service.release_stock(test_product.id, released_quantity)
+
+        mock_repository.get_product_for_update.assert_called_once_with(test_product.id)
+        mock_repository.update_product.assert_called_once_with(test_product)
+        assert product.stock.value == 8

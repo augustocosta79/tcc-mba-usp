@@ -197,10 +197,6 @@ class TestUpdateProduct:
         body = send_update_request(timed_client, product.id, price_payload)
         assert body["price"] == price_payload["price"]
 
-        stock_payload = {"stock": 3}
-        body = send_update_request(timed_client, product.id, stock_payload)
-        assert body["stock"] == stock_payload["stock"]
-
         new_cat_name = "new category"
         new_cat_desc = "new description"
         new_category = create_test_category(new_cat_name, new_cat_desc)

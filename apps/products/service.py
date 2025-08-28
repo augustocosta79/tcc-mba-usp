@@ -10,7 +10,6 @@ from apps.categories.service import CategoryService
 from apps.categories.repository import CategoryRepository
 from apps.users.service import UserService
 from apps.users.repository import UserRepository
-from apps.shared.exceptions import OutOfStockError
 from utils.logger import configure_logger
 
 logger = configure_logger(__name__)
@@ -77,7 +76,6 @@ class ProductService:
             "title": product.change_title,
             "description": product.change_description,
             "price": product.change_price,
-            "stock": product.change_stock,
         }
 
         for attr, value in payload_data.items():
@@ -114,12 +112,16 @@ class ProductService:
     def reserve_stock(self, product_id: UUID, reserved_quantity: int):
         if not (product:=self.repository.get_product_for_update(product_id)):
             self.logger.warning("Product not found. Stock reservation aborted.")
-            raise NotFoundError("Product not found")
-        
-        remaining_quantity = product.stock.value - reserved_quantity        
-        if remaining_quantity < 0:
-            raise OutOfStockError("Out of stock product")
-        
-        product.change_stock(remaining_quantity)
+            raise NotFoundError("Product not found")        
+        product.reserve_stock(reserved_quantity)
         self.repository.update_product(product)
-        
+        return product
+    
+    
+    def release_stock(self, product_id: UUID, released_quantity: int):
+        if not (product:=self.repository.get_product_for_update(product_id)):
+            self.logger.warning("Product not found. Stock reservation aborted.")
+            raise NotFoundError("Product not found")        
+        product.release_stock(released_quantity)
+        self.repository.update_product(product)
+        return product

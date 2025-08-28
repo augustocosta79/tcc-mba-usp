@@ -6,3 +6,15 @@ class OrderStatus(str, Enum):
     SHIPPED = "shipped"
     DELIVERED = "delivered"
     CANCELED = "canceled"
+
+    @property
+    def previous(self):
+        previous_map = {
+            "approved": "pending",
+            "shipped": "approved",
+            "delivered": "shipped",
+            "canceled": "pending",
+            "pending": None,
+        }
+        prev = previous_map[self.value]
+        return OrderStatus(prev) if prev else None
