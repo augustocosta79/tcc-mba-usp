@@ -78,6 +78,7 @@ def assert_order_is_equal(order, test_order, test_order_item):
     assert order.user.id == test_order.user_id
     assert order.address.id == test_order.address_id
     assert len(order.items) == len(test_order.items)
+    assert order.total_amount == test_order.total_amount
 
     assert order.items[0].id == test_order_item.id
     assert order.items[0].product.id == test_order_item.product_id
@@ -136,6 +137,7 @@ class TestOrderCreation:
         assert len(result.items) == 2
         assert result.user.id == user.id
         assert result.address.id == address.id
+        assert Price(result.total_amount) == Price(sum(item.price.value * item.quantity for item in mock_order._items))
 
 
     def test_should_fail_create_order_with_out_of_stock_product(self, order_service):
@@ -330,11 +332,13 @@ class TestRemoveItemFromOrder:
         # Validar que o item foi removido da lista
         assert len(order.items) == 1
         assert order.items[0].id == mock_order_item2.id
+        assert order.total_amount == mock_order_item2.price * mock_order_item2.quantity
 
         # Validar DTO retornado (somente o item restante)
         assert len(result_dto.items) == 1
         assert result_dto.items[0].id == mock_order_item2.id
         assert result_dto.items[0].product.id == mock_product2.id
+        assert result_dto.total_amount == mock_order_item2.price * mock_order_item2.quantity
 
 
 class TestCancelOrder:
@@ -399,6 +403,54 @@ class TestCancelOrder:
         assert result_dto.items[1].id == mock_order_item2.id
         assert result_dto.items[1].product.id == mock_product2.id
         assert result_dto.status == OrderStatus.CANCELED
+
+
+@pytest.mark.django_db
+class TestIncreaseOrderItemQuantity:
+    def test_should_increase_order_item_quantity_successfully(self, order_service):
+        mock_user = create_mock_user()
+        mock_product = create_mock_product(price=100, stock=10)
+        mock_address = create_mock_address()
+
+        initial_quantity = 2
+        mock_order_item = MagicMock()
+        mock_order_item.id = uuid4()
+        mock_order_item.product_id = mock_product.id
+        mock_order_item.quantity = initial_quantity
+        mock_order_item.price = mock_product.price
+
+        order = Order(
+            mock_user.id,
+            mock_address.id,
+            [mock_order_item],
+            OrderStatus.PENDING
+        )
+
+        # Mocks do serviço e repositório
+        order_service.repository.get_order_by_id.return_value = order
+        order_service.product_service.reserve_stock.return_value = True
+        order_service.repository.update_order.return_value = order
+
+
+        # Mock do get_user_by_id, get_address_by_id e get_product_by_id
+        order_service.user_service.get_user_by_id.return_value = mock_user
+        order_service.address_service.get_address_by_id.return_value = mock_address
+
+        order_service.product_service.get_product_by_id.return_value = mock_product
+
+        quantity_to_add = 3
+        total_amount_before = order.total_amount
+
+        result_dto = order_service.increase_order_item_quantity(order.id, mock_order_item.id, 3)
+
+        assert result_dto.id == order.id
+        assert len(result_dto.items) == 1
+        item = result_dto.items[0]
+        assert item.product.id == mock_product.id
+        assert item.quantity == initial_quantity + quantity_to_add
+        assert total_amount_before == initial_quantity * mock_order_item.price
+        assert Price(result_dto.total_amount) == (initial_quantity + quantity_to_add) * mock_order_item.price
+
         
 
 

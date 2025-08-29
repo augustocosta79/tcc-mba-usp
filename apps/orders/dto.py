@@ -35,4 +35,5 @@ class OrderDTO:
             address=from_address_entity_to_schema(address),
             items=items,
             status=order.status,
+            total_amount=str(order.total_amount.value)
         )

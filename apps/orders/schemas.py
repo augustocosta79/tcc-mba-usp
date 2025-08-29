@@ -20,6 +20,7 @@ class OrderSchema(BaseModel):
     address: AddressSchema
     items: List[OrderItemSchema]
     status: OrderStatus
+    total_amount: str
 
 class OrderCreateSchema(BaseModel):
     address_id: UUID
