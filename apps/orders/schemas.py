@@ -27,3 +27,6 @@ class OrderCreateSchema(BaseModel):
 
 class OrderStatusChangeSchema(BaseModel):
     new_status: OrderStatus
+
+class OrderItemQuantityChangeSchema(BaseModel):
+    quantity: int

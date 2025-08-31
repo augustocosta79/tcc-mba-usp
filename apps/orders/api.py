@@ -16,7 +16,7 @@ from apps.carts.service import CartService
 from apps.carts.repository import CartRepository
 from apps.users.service import UserService
 from apps.users.repository import UserRepository
-from apps.orders.schemas import OrderSchema, OrderCreateSchema, OrderStatusChangeSchema
+from apps.orders.schemas import OrderSchema, OrderCreateSchema, OrderStatusChangeSchema, OrderItemQuantityChangeSchema
 
 
 logger = configure_logger(__name__)
@@ -97,3 +97,14 @@ def delete_order_item(request, order_id: UUID, item_id: UUID) -> OrderSchema:
 )
 def cancel_order(request, order_id: UUID):
     return service.cancel_order(order_id)
+
+@orders_router.post(
+    "/{order_id}/items/{item_id}",
+    response = {
+        HTTPStatus.OK: OrderSchema,
+        HTTPStatus.CONFLICT: ErrorSchema,
+        HTTPStatus.NOT_FOUND: ErrorSchema
+    }
+)
+def increase_order_item(request, order_id: UUID, item_id: UUID, payload: OrderItemQuantityChangeSchema):
+    return service.increase_order_item_quantity(order_id, item_id, payload.quantity)

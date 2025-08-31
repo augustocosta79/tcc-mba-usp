@@ -284,3 +284,28 @@ class TestCancelOrder:
         body_item = body["items"][0]
         assert body_item["product"]["id"] == creation_body["items"][0]["product"]["id"]
         assert body_item["product"]["stock"] == product_stock
+
+@pytest.mark.django_db
+class TestIncreaseOrderItemQuantity:
+    def test_should_increase_order_item_quantity_and_reserve_stock(self, timed_client, test_user, test_address, request_order_creation):
+        product_stock = 10
+        item_quantity = 3
+        creation_response = request_order_creation(test_user, test_address, product_stock, item_quantity)
+
+        creation_body = creation_response.json()
+        assert_order_created_successfully(creation_body, test_user, test_address, item_quantity)
+        assert creation_body["items"][0]["product"]["stock"] == product_stock - item_quantity
+        assert creation_body["status"] == OrderStatus.PENDING.value
+
+        order_id = creation_body["id"]
+        item_id = creation_body["items"][0]["id"]
+        url=f"/api/orders/{order_id}/items/{item_id}"
+        payload = { "quantity": 2 }
+
+        response = timed_client.post(url, payload, content_type="application/json")
+        assert response.status_code == 200
+
+        body = response.json()
+        assert body["id"] == creation_body["id"]
+        assert body["items"][0]["id"] == item_id
+        assert body["items"][0]["product"]["stock"] == product_stock - item_quantity - payload["quantity"]

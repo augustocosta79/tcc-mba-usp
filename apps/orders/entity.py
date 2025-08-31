@@ -30,6 +30,9 @@ class OrderItem:
     @property
     def id(self):
         return self._id
+    
+    def increase_quantity(self, quantity: int):
+        self._quantity += quantity
 
 
 class Order:
@@ -86,6 +89,7 @@ class Order:
         raise NotFoundError(f"OrderItem not found - ID {item_id}")
     
     def remove_item(self, item_id: UUID):
+        self._ensure_editable_state()
         item_to_remove = self.get_item(item_id)
         self._items.remove(item_to_remove)
         self._total_amount = self._calculate_total_amount()
@@ -98,5 +102,26 @@ class Order:
         if self._status not in allowed_current_status:
             raise ConflictError(f"Just {', '.join([ order_status.value for order_status in allowed_current_status])} orders can be canceled")
         self._status = OrderStatus.CANCELED
+
+    def increase_item_quantity(self, item_id: UUID, quantity: int):
+        self._ensure_editable_state()
+        for item in self._items:
+            if item.id == item_id:
+                item.increase_quantity(quantity)
+        self._total_amount = self._calculate_total_amount()
+
+    def decrease_item_quantity(self, item_id: UUID, quantity: int):
+        self._ensure_editable_state()
+        for item in self._items:
+            if item.id == item_id:
+                item.quantity -= quantity
+        self._total_amount = self._calculate_total_amount()
+
+    def _ensure_editable_state(self):
+        if self._status != OrderStatus.PENDING:
+            raise ConflictError("Only PENDING orders allow item changes.")
+
+
+    
 
         
