@@ -3,7 +3,7 @@ from typing import Optional, List
 from uuid import UUID
 from apps.users.schema import UserNestedSchema
 from apps.addresses.schema import AddressSchema
-from apps.orders.enums import OrderStatus
+from apps.orders.enums import OrderStatus, OrderItemOperation
 from apps.products.schema import ProductNestedSchema
 
 from pydantic import BaseModel
@@ -30,3 +30,4 @@ class OrderStatusChangeSchema(BaseModel):
 
 class OrderItemQuantityChangeSchema(BaseModel):
     quantity: int
+    operation: OrderItemOperation

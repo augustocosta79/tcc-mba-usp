@@ -34,6 +34,11 @@ class OrderItem:
     def increase_quantity(self, quantity: int):
         self._quantity += quantity
 
+    def decrease_quantity(self, quantity: int):
+        if quantity > self._quantity:
+            raise ConflictError("Not enough order item quantity to decrease")
+        self._quantity -= quantity
+
 
 class Order:
     def __init__(
@@ -77,7 +82,7 @@ class Order:
     
     
     def set_status(self, new_status: OrderStatus):
-        if self._status == new_status.previous:
+        if self._status.value == new_status.previous.value:
             self._status = new_status
             return
         raise ConflictError(f"Can't change {self._status} order to {new_status}. It should be {new_status.previous}")
@@ -114,7 +119,7 @@ class Order:
         self._ensure_editable_state()
         for item in self._items:
             if item.id == item_id:
-                item.quantity -= quantity
+                item.decrease_quantity(quantity)
         self._total_amount = self._calculate_total_amount()
 
     def _ensure_editable_state(self):

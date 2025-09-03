@@ -18,3 +18,8 @@ class OrderStatus(str, Enum):
         }
         prev = previous_map[self.value]
         return OrderStatus(prev) if prev else None
+    
+
+class OrderItemOperation(str, Enum):
+    INCREASE = "increase"
+    DECREASE =  "decrease"

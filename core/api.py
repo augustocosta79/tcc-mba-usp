@@ -1,7 +1,8 @@
 from ninja import NinjaAPI, Redoc
 from http import HTTPStatus
-from apps.shared.exceptions.exceptions import NotFoundError, ConflictError, UnauthorizedError, UnprocessableEntityError
+from apps.shared.exceptions.exceptions import NotFoundError, ConflictError, UnauthorizedError, UnprocessableEntityError, OutOfStockError
 from utils.logger import configure_logger
+from utils.jwt import JWTAuth
 
 from apps.authentication.api import authentication_router
 from apps.users.api import users_router
@@ -17,6 +18,7 @@ api = NinjaAPI(
     title="API",
     version="1.0.0",
     description="This is a API to manage data",
+    # auth=JWTAuth()
 )
 
 
@@ -74,5 +76,14 @@ def unprocessable_entity_handler(request, exc: UnprocessableEntityError):
         request,
         {"message": str(exc)},
         status=HTTPStatus.UNPROCESSABLE_ENTITY,
+    )
+
+
+@api.exception_handler(OutOfStockError)
+def out_of_stock_handler(request, exc: OutOfStockError):
+    return api.create_response(
+        request,
+        {"message": str(exc)},
+        status=HTTPStatus.CONFLICT,
     )
 

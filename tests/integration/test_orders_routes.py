@@ -1,7 +1,7 @@
 import json
 import pytest
 from tests.utils.timed_client import TimedClient
-from apps.orders.enums import OrderStatus
+from apps.orders.enums import OrderStatus, OrderItemOperation
 
 
 @pytest.fixture
@@ -153,6 +153,31 @@ class TestOrderCreation:
         assert_order_created_successfully(body, test_user, test_address, item_quantity)
         assert body["items"][0]["product"]["stock"] == product_stock - item_quantity
 
+    
+    def test_should_return_404_when_address_not_found(self, timed_client, test_user, create_test_product, add_test_product_to_cart):
+        product = create_test_product(5)
+        add_test_product_to_cart(product, 2)
+
+        url = f"/api/orders/users/{test_user['id']}"
+        payload = {"address_id": "00000000-0000-0000-0000-000000000000"}
+
+        response = timed_client.post(url, payload, content_type="application/json")
+
+        assert response.status_code == 404
+        assert "Address not found" in response.json()["message"]
+
+    def test_should_return_409_when_product_out_of_stock(self, timed_client, test_user, test_address, create_test_product, add_test_product_to_cart):
+        product = create_test_product(1)
+        add_test_product_to_cart(product, 2)  # tentando adicionar mais que o estoque
+
+        url = f"/api/orders/users/{test_user['id']}"
+        payload = {"address_id": test_address["id"]}
+
+        response = timed_client.post(url, payload, content_type="application/json")
+
+        assert response.status_code == 409
+        assert "Out of stock product" in response.json()["message"]
+
 
 @pytest.mark.django_db
 class TestGetOrderById:
@@ -174,6 +199,13 @@ class TestGetOrderById:
         assert_order_data_is_equal(body, creation_body, product_stock, item_quantity)
         assert body["status"] == creation_body["status"]
 
+    def test_should_return_404_when_order_not_found(self, timed_client):
+        url = "/api/orders/00000000-0000-0000-0000-000000000000"
+        response = timed_client.get(url)
+
+        assert response.status_code == 404
+        assert "Order not found" in response.json()["message"]
+
 
 @pytest.mark.django_db
 class TestListOrdersByUserId:
@@ -194,6 +226,20 @@ class TestListOrdersByUserId:
         assert len(body) == 1
         assert_order_data_is_equal(body[0], creation_body, product_stock, item_quantity)
         assert body[0]["status"] == creation_body["status"]
+
+    def test_should_return_404_when_user_not_found(self, timed_client):
+        url = "/api/orders"
+        response = timed_client.get(url, data={"user_id": "00000000-0000-0000-0000-000000000000"})
+
+        assert response.status_code == 404
+        assert "User not found" in response.json()["message"]
+
+    def test_should_return_empty_list_when_user_has_no_orders(self, timed_client, test_user):
+        url = "/api/orders"
+        response = timed_client.get(url, data={"user_id": str(test_user["id"])})
+
+        assert response.status_code == 200
+        assert response.json() == []
 
 
 @pytest.mark.django_db
@@ -218,10 +264,38 @@ class TestOrdersStatusChange:
         assert_order_data_is_equal(body, creation_body, product_stock, item_quantity)
         assert body["status"] == payload["new_status"]
 
+    def test_should_return_422_when_status_is_invalid(self, timed_client, test_user, test_address, request_order_creation):
+        response = request_order_creation(test_user, test_address, 10, 1)
+        order_id = response.json()["id"]
+
+        url = f"/api/orders/{order_id}/status"
+        payload = {"new_status": "INVALID_STATUS"}
+
+        response = timed_client.patch(url, payload, content_type="application/json")
+        assert response.status_code == 422
+        assert "Input should be 'pending', 'approved', 'shipped', 'delivered' or 'canceled'" in response.json()["detail"][0]["msg"] # pydantic error object
+
+    def test_should_return_409_when_trying_to_approve_a_canceled_order(self, timed_client, test_user, test_address, request_order_creation):
+        response = request_order_creation(test_user, test_address, 10, 1)
+        order_id = response.json()["id"]
+
+        # Primeiro cancela o pedido
+        cancel_url = f"/api/orders/{order_id}/cancel"
+        cancel_response = timed_client.patch(cancel_url)
+        assert cancel_response.status_code == 200
+
+        # Tenta aprovar o pedido cancelado
+        url = f"/api/orders/{order_id}/status"
+        payload = {"new_status": "approved"}
+        response = timed_client.patch(url, payload, content_type="application/json")
+
+        assert response.status_code == 409
+        assert "Can't change canceled order to approved" in response.json()["message"]
+
 
 @pytest.mark.django_db
 class TestRemoveOrderItem:
-    def test_should_return_status_200_ok_and_remove_order_by_item_id(self, timed_client, test_user, test_address, request_order_creation, create_test_product, add_test_product_to_cart, get_product_by_id):
+    def test_should_return_status_200_ok_and_remove_order_item_by_id(self, timed_client, test_user, test_address, request_order_creation, create_test_product, add_test_product_to_cart, get_product_by_id):
         product2_stock = 4
         item2_quantity = 2
         product2_data = create_test_product(product2_stock)
@@ -261,6 +335,23 @@ class TestRemoveOrderItem:
         assert released_stock_product["id"] == product2_data["id"]
         assert released_stock_product["stock"] == product2_stock
 
+    def test_should_return_404_when_order_not_found(self, timed_client):
+        url = "/api/orders/00000000-0000-0000-0000-000000000000/items/00000000-0000-0000-0000-000000000000"
+        response = timed_client.delete(url)
+
+        assert response.status_code == 404
+        assert "Order not found" in response.json()["message"]
+
+    def test_should_return_404_when_item_not_found_in_order(self, timed_client, test_user, test_address, request_order_creation):
+        response = request_order_creation(test_user, test_address, 10, 1)
+        order_id = response.json()["id"]
+
+        url = f"/api/orders/{order_id}/items/00000000-0000-0000-0000-000000000000"
+        response = timed_client.delete(url)
+
+        assert response.status_code == 404
+        assert "OrderItem not found" in response.json()["message"]
+
 @pytest.mark.django_db
 class TestCancelOrder:
     def test_should_return_status_200_ok_cancel_order_and_release_stock(self, timed_client, test_user, test_address, request_order_creation):
@@ -285,9 +376,37 @@ class TestCancelOrder:
         assert body_item["product"]["id"] == creation_body["items"][0]["product"]["id"]
         assert body_item["product"]["stock"] == product_stock
 
+    def test_should_return_404_when_order_not_found(self, timed_client):
+        url = "/api/orders/00000000-0000-0000-0000-000000000000/cancel"
+        response = timed_client.patch(url)
+
+        assert response.status_code == 404
+        assert "Order not found" in response.json()["message"]
+
+    def test_should_return_409_when_trying_to_cancel_an_approved_order(self, timed_client, test_user, test_address, request_order_creation):
+        response = request_order_creation(test_user, test_address, 10, 1)
+        order_id = response.json()["id"]
+
+        # Aprova o pedido primeiro
+        status_url = f"/api/orders/{order_id}/status"
+        res = timed_client.patch(status_url, {"new_status": "approved"}, content_type="application/json")
+        assert res.status_code == 200
+
+        # Envia o pedido
+        status_url = f"/api/orders/{order_id}/status"
+        res = timed_client.patch(status_url, {"new_status": "shipped"}, content_type="application/json")
+        assert res.status_code == 200
+
+        # Tenta cancelar depois
+        url = f"/api/orders/{order_id}/cancel"
+        response = timed_client.patch(url)
+
+        assert response.status_code == 409
+        assert "Just pending, approved orders can be canceled" in response.json()["message"]
+
 @pytest.mark.django_db
-class TestIncreaseOrderItemQuantity:
-    def test_should_increase_order_item_quantity_and_reserve_stock(self, timed_client, test_user, test_address, request_order_creation):
+class TestChangeOrderItemQuantity:
+    def test_should_return_status_200_ok_increase_order_item_quantity_and_reserve_stock(self, timed_client, test_user, test_address, request_order_creation):
         product_stock = 10
         item_quantity = 3
         creation_response = request_order_creation(test_user, test_address, product_stock, item_quantity)
@@ -300,7 +419,7 @@ class TestIncreaseOrderItemQuantity:
         order_id = creation_body["id"]
         item_id = creation_body["items"][0]["id"]
         url=f"/api/orders/{order_id}/items/{item_id}"
-        payload = { "quantity": 2 }
+        payload = { "quantity": 2, "operation": OrderItemOperation.INCREASE }
 
         response = timed_client.post(url, payload, content_type="application/json")
         assert response.status_code == 200
@@ -309,3 +428,55 @@ class TestIncreaseOrderItemQuantity:
         assert body["id"] == creation_body["id"]
         assert body["items"][0]["id"] == item_id
         assert body["items"][0]["product"]["stock"] == product_stock - item_quantity - payload["quantity"]
+
+
+    def test_should_return_status_200_ok_decrease_order_item_quantity_and_reserve_stock(self, timed_client, test_user, test_address, request_order_creation):
+        product_stock = 10
+        item_quantity = 3
+        creation_response = request_order_creation(test_user, test_address, product_stock, item_quantity)
+
+        creation_body = creation_response.json()
+        assert_order_created_successfully(creation_body, test_user, test_address, item_quantity)
+        assert creation_body["items"][0]["product"]["stock"] == product_stock - item_quantity
+        assert creation_body["status"] == OrderStatus.PENDING.value
+
+        order_id = creation_body["id"]
+        item_id = creation_body["items"][0]["id"]
+        url=f"/api/orders/{order_id}/items/{item_id}"
+        payload = { "quantity": 2, "operation": OrderItemOperation.DECREASE }
+
+        response = timed_client.post(url, payload, content_type="application/json")
+        assert response.status_code == 200
+
+        body = response.json()
+        assert body["id"] == creation_body["id"]
+        assert body["items"][0]["id"] == item_id
+        assert body["items"][0]["product"]["stock"] == product_stock - item_quantity + payload["quantity"]
+
+    def test_should_return_409_when_increasing_quantity_beyond_stock(self, timed_client, test_user, test_address, request_order_creation):
+        response = request_order_creation(test_user, test_address, 3, 2)
+        creation_body = response.json()
+
+        order_id = creation_body["id"]
+        item_id = creation_body["items"][0]["id"]
+
+        url = f"/api/orders/{order_id}/items/{item_id}"
+        payload = {"quantity": 5, "operation": OrderItemOperation.INCREASE}
+        response = timed_client.post(url, payload, content_type="application/json")
+
+        assert response.status_code == 409
+        assert "Out of stock product" in response.json()["message"]
+
+    def test_should_return_400_when_decreasing_quantity_below_one(self, timed_client, test_user, test_address, request_order_creation):
+        response = request_order_creation(test_user, test_address, 5, 1)
+        creation_body = response.json()
+
+        order_id = creation_body["id"]
+        item_id = creation_body["items"][0]["id"]
+
+        url = f"/api/orders/{order_id}/items/{item_id}"
+        payload = {"quantity": 2, "operation": OrderItemOperation.DECREASE}
+        response = timed_client.post(url, payload, content_type="application/json")
+
+        assert response.status_code == 409
+        assert "Not enough order item quantity to decrease" in response.json()["message"]

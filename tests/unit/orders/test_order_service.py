@@ -406,7 +406,7 @@ class TestCancelOrder:
 
 
 @pytest.mark.django_db
-class TestIncreaseOrderItemQuantity:
+class TestChangeOrderItemQuantity:
     def test_should_increase_order_item_quantity_successfully(self, order_service):
         mock_user = create_mock_user()
         mock_product = create_mock_product(price=100, stock=10)
@@ -450,6 +450,51 @@ class TestIncreaseOrderItemQuantity:
         assert item.product.id == mock_product.id
         assert Price(result_dto.total_amount) == (initial_quantity + quantity_to_add) * order_item.price
         assert item.quantity == initial_quantity + quantity_to_add
+    
+    
+    def test_should_decrease_order_item_quantity_successfully(self, order_service):
+        mock_user = create_mock_user()
+        mock_product = create_mock_product(price=100, stock=10)
+        mock_address = create_mock_address()
+
+        initial_quantity = 5
+        order_item = OrderItem(
+            mock_product.id,
+            initial_quantity,
+            mock_product.price
+        )
+
+        order = Order(
+            mock_user.id,
+            mock_address.id,
+            [order_item],
+            OrderStatus.PENDING
+        )
+
+        # Mocks do serviço e repositório
+        order_service.repository.get_order_by_id.return_value = order
+        order_service.product_service.reserve_stock.return_value = True
+        order_service.repository.update_order.return_value = order
+
+
+        # Mock do get_user_by_id, get_address_by_id e get_product_by_id
+        order_service.user_service.get_user_by_id.return_value = mock_user
+        order_service.address_service.get_address_by_id.return_value = mock_address
+
+        order_service.product_service.get_product_by_id.return_value = mock_product
+
+        quantity_to_subtract = 3
+        total_amount_before = order.total_amount
+
+        result_dto = order_service.decrease_order_item_quantity(order.id, order_item.id, 3)
+
+        assert result_dto.id == order.id
+        assert len(result_dto.items) == 1
+        item = result_dto.items[0]
+        assert total_amount_before == initial_quantity * order_item.price
+        assert item.product.id == mock_product.id
+        assert Price(result_dto.total_amount) == (initial_quantity - quantity_to_subtract) * order_item.price
+        assert item.quantity == initial_quantity - quantity_to_subtract
 
         
 

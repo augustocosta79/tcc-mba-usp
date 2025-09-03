@@ -114,6 +114,21 @@ class OrderService:
             item = order.get_item(item_id)
             self.product_service.reserve_stock(item.product_id, quantity)
             order.increase_item_quantity(item.id, quantity)
+            updated_order = self.repository.update_order(order)
+
+            user = self.user_service.get_user_by_id(order.user_id)
+            address = self.address_service.get_address_by_id(order.address_id)
+            products = [ self.product_service.get_product_by_id(item.product_id) for item in order.items ]
+            return OrderDTO.build(updated_order, user, address, products)
+    
+    
+    def decrease_order_item_quantity(self, order_id: UUID, item_id: UUID, quantity: int):
+        order = self._get_order_or_raise(order_id)
+
+        with transaction.atomic():
+            item = order.get_item(item_id)
+            self.product_service.release_stock(item.product_id, quantity)
+            order.decrease_item_quantity(item.id, quantity)
             self.repository.update_order(order)
 
             user = self.user_service.get_user_by_id(order.user_id)

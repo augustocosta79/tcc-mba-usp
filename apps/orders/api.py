@@ -106,5 +106,9 @@ def cancel_order(request, order_id: UUID):
         HTTPStatus.NOT_FOUND: ErrorSchema
     }
 )
-def increase_order_item(request, order_id: UUID, item_id: UUID, payload: OrderItemQuantityChangeSchema):
-    return service.increase_order_item_quantity(order_id, item_id, payload.quantity)
+def change_order_item_quantity(request, order_id: UUID, item_id: UUID, payload: OrderItemQuantityChangeSchema):
+    operations = {
+        "increase": service.increase_order_item_quantity,
+        "decrease": service.decrease_order_item_quantity
+    }
+    return operations[payload.operation.value](order_id, item_id, payload.quantity)
